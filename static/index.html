@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Airport Tracker - Web UI</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <!-- Plotly CDN for interactive charts -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <div>
+        <h1>✈️ Wichita Dwight D. Eisenhower National Airport</h1>
+        <p class="subtitle">ICT • Live Flight Tracking & Operations Dashboard</p>
+      </div>
+      <div class="header-right">
+        <span class="live-indicator">● LIVE</span>
+        <span class="last-update">Updated: <span id="last-updated">--:--</span></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h3>🎛️ Quick Stats</h3>
+        <div class="stat-cards">
+          <div class="stat-card">
+            <div class="stat-label">Total Flights</div>
+            <div class="stat-value" id="total-flights">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Arrivals</div>
+            <div class="stat-value" id="total-arrivals">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Departures</div>
+            <div class="stat-value" id="total-departures">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h3>ℹ️ Airport Info</h3>
+        <div class="airport-details">
+          <div class="detail-item">
+            <span class="label">Code</span>
+            <span class="value">ICT</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Location</span>
+            <span class="value">Wichita, KS</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Elevation</span>
+            <span class="value">1,333 ft</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Runways</span>
+            <span class="value">3</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Gates</span>
+            <span class="value">16</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <button id="refresh-now" class="refresh-button">🔄 Refresh Data</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="charts">
+        <div id="chart-status" class="chart-card"></div>
+        <div id="chart-hourly" class="chart-card"></div>
+        <div id="chart-airline" class="chart-card"></div>
+        <div id="chart-map" class="chart-card"></div>
+      </section>
+
+      <section class="history-summary-container">
+        <div id="history-summary" class="history-summary-panel">
+          <div class="loading-spinner">Loading today's summary...</div>
+        </div>
+      </section>
+
+      <section class="data-section">
+        <div class="panels">
+          <div class="panel flights-panel">
+            <div class="panel-header">
+              <h4>✈️ Live Flights <span id="flight-count" class="badge">0</span></h4>
+            </div>
+            <div class="tabs">
+              <button class="tab-btn active" data-tab="arrivals">🛬 Arrivals</button>
+              <button class="tab-btn" data-tab="departures">🛫 Departures</button>
+            </div>
+            <div id="arrivals" class="tab-content active">
+              <div class="flight-list" id="arrivals-list">
+                <div class="loading-spinner">Loading arrivals...</div>
+              </div>
+            </div>
+            <div id="departures" class="tab-content">
+              <div class="flight-list" id="departures-list">
+                <div class="loading-spinner">Loading departures...</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="panel weather-panel">
+            <div class="panel-header">
+              <h4>🌤️ Current Weather Conditions</h4>
+            </div>
+            <div class="weather-display" id="weather-cards">
+              <div class="loading-spinner">Loading weather...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <div class="footer-content">
+      <div class="footer-left">
+        <p><strong>Wichita Dwight D. Eisenhower National Airport (ICT)</strong></p>
+        <p class="small">Data Sources: Flightradar24 • Airportia • Open-Meteo</p>
+      </div>
+      <div class="footer-right">
+        <p class="small">Auto-refresh: Every 15 seconds</p>
+        <p class="small">All times displayed in Central Time (CT)</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

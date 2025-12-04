@@ -1,0 +1,293 @@
+:root{
+  --bg:#f8f9fa;
+  --card:#ffffff;
+  --accent:#3498db;
+  --success:#27ae60;
+  --warning:#f39c12;
+  --danger:#e74c3c;
+  --muted:#6c757d;
+  --border:#e1e6f0;
+}
+body{font-family:Segoe UI, Roboto, Arial, sans-serif;background:var(--bg);color:#222;margin:0}
+
+/* Enhanced Header */
+header{
+  background:linear-gradient(135deg,#1e3c72 0%,#2a5298 100%);
+  color:white;
+  padding:1.5rem 2rem;
+  box-shadow:0 2px 10px rgba(0,0,0,0.1);
+}
+.header-content{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  max-width:1600px;
+  margin:0 auto;
+}
+header h1{margin:0;font-size:1.8rem}
+header .subtitle{margin:0.5rem 0 0;opacity:0.9;font-size:0.95rem}
+.header-right{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:0.5rem;
+  font-size:0.9rem;
+}
+.live-indicator{
+  color:#4ade80;
+  font-weight:bold;
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{
+  0%,100%{opacity:1}
+  50%{opacity:0.5}
+}
+.last-update{font-size:0.85rem;opacity:0.9}
+.container{display:flex;gap:20px;padding:20px}
+/* Sidebar Enhancements */
+.sidebar{
+  width:260px;
+  background:var(--card);
+  padding:16px;
+  border-radius:8px;
+  box-shadow:0 1px 4px rgba(0,0,0,0.06);
+}
+.sidebar h3{margin-top:0;margin-bottom:12px;font-size:14px;font-weight:600}
+.sidebar-section{margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.sidebar-section:last-child{border-bottom:none}
+
+/* Stat Cards */
+.stat-cards{display:flex;flex-direction:column;gap:8px}
+.stat-card{
+  background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+  color:white;
+  padding:12px;
+  border-radius:6px;
+  text-align:center;
+}
+.stat-label{font-size:11px;opacity:0.9;text-transform:uppercase}
+.stat-value{font-size:24px;font-weight:700;margin-top:4px}
+
+/* Airport Details */
+.airport-details{display:flex;flex-direction:column;gap:8px}
+.detail-item{
+  display:flex;
+  justify-content:space-between;
+  padding:6px 8px;
+  background:#f8f9fb;
+  border-radius:4px;
+  font-size:12px;
+}
+.detail-item .label{color:var(--muted);font-weight:500}
+.detail-item .value{color:#2c3e50;font-weight:600}
+
+/* Refresh Button */
+.refresh-button{
+  width:100%;
+  padding:10px;
+  border-radius:6px;
+  border:none;
+  background:linear-gradient(135deg,#3498db,#2980b9);
+  color:white;
+  font-weight:600;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.refresh-button:hover{
+  transform:translateY(-2px);
+  box-shadow:0 4px 12px rgba(52,152,219,0.3);
+}
+.refresh-button:active{transform:translateY(0)}
+/* Main Content Layout */
+.main{flex:1;display:flex;flex-direction:column;gap:12px}
+.data-section{display:flex;flex-direction:column;gap:12px}
+.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.chart-card{background:var(--card);padding:12px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,0.06);min-height:260px}
+.panels{display:flex;gap:12px;flex:1}
+.panel{flex:1;background:var(--card);padding:16px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,0.06);overflow:auto;max-height:600px}
+.panel-header{margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--border)}
+.panel-header h4{margin:0;font-size:16px}
+.badge{background:var(--accent);color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600;margin-left:4px}
+.tabs{display:flex;gap:4px;margin-bottom:12px;border-bottom:1px solid var(--border)}
+.tab-btn{padding:8px 14px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:13px;font-weight:500}
+.tab-btn.active{border-bottom-color:var(--accent);color:var(--accent);font-weight:600}
+.tab-btn:hover{background:#f5f7fa}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.flight-list{display:flex;flex-direction:column;gap:8px}
+.flight-card{background:#f8f9fb;border-left:3px solid var(--accent);padding:10px;border-radius:4px;transition:all 0.2s}
+.flight-card:hover{box-shadow:0 2px 8px rgba(0,0,0,0.08);transform:translateX(2px)}
+.flight-card.landed{border-left-color:var(--success)}
+.flight-card.delayed{border-left-color:var(--warning)}
+.flight-card.cancelled{border-left-color:var(--danger)}
+.flight-card.arriving{border-left-color:#3498db}
+.flight-card.departing{border-left-color:#9b59b6}
+.flight-card.scheduled{border-left-color:var(--muted)}
+.flight-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.flight-number{font-weight:700;font-size:14px;color:#2c3e50}
+.flight-status{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;text-transform:uppercase}
+.status-landed{background:#d4edda;color:#155724}
+.status-delayed{background:#fff3cd;color:#856404}
+.status-cancelled{background:#f8d7da;color:#721c24}
+.status-arriving{background:#d1ecf1;color:#0c5460}
+.status-departing{background:#e8daef;color:#6c3483}
+.status-scheduled{background:#e2e3e5;color:#383d41}
+.status-unknown{background:#f8f9fa;color:#6c757d}
+.flight-details{display:flex;flex-direction:column;gap:3px}
+.detail-row{display:flex;justify-content:space-between;font-size:12px}
+.detail-row .label{color:var(--muted);font-weight:500}
+.detail-row .value{color:#2c3e50;font-weight:600}
+/* Weather Display */
+.weather-display{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.weather-panel{margin-bottom:12px}
+.loading-spinner{
+  text-align:center;
+  padding:40px 20px;
+  color:var(--muted);
+  font-size:14px;
+  font-style:italic;
+}
+.weather-card{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:12px;border-radius:8px;text-align:center}
+.weather-card h5{margin:0 0 8px;font-size:13px;opacity:0.9}
+.weather-temp{font-size:28px;font-weight:700;margin:8px 0}
+.weather-details{font-size:11px;margin-top:8px;opacity:0.95}
+.weather-details div{margin:2px 0}
+.airport-info-section{margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
+.airport-info-section h4{margin:0 0 12px;font-size:14px}
+.info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.info-card{background:#f8f9fb;padding:10px;border-radius:6px;border-left:3px solid var(--accent)}
+.info-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:4px}
+.info-value{font-size:13px;color:#2c3e50;font-weight:600}
+.empty-state,.loading-state,.error-state{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px}
+.error-state{color:var(--danger)}
+/* Footer */
+footer{
+  padding:16px 24px;
+  background:#f8f9fa;
+  border-top:1px solid var(--border);
+}
+.footer-content{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  max-width:1600px;
+  margin:0 auto;
+  font-size:12px;
+  color:var(--muted);
+}
+.footer-left strong{color:#2c3e50}
+.footer-right{text-align:right}
+.small{font-size:12px}
+#flight-count{background:var(--success)}
+
+/* History Tab Styles */
+.history-stats{
+  background:#f8f9fb;
+  padding:12px 16px;
+  border-radius:6px;
+  margin-bottom:12px;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+}
+.history-stat{
+  text-align:center;
+  padding:8px;
+  background:white;
+  border-radius:4px;
+  border-left:3px solid var(--accent);
+}
+.history-stat-label{
+  font-size:11px;
+  color:var(--muted);
+  text-transform:uppercase;
+  margin-bottom:4px;
+}
+.history-stat-value{
+  font-size:24px;
+  font-weight:700;
+  color:#2c3e50;
+}
+.history-tabs{
+  display:flex;
+  gap:4px;
+  margin-bottom:12px;
+  border-bottom:1px solid var(--border);
+}
+.history-tab-btn{
+  padding:8px 14px;
+  background:none;
+  border:none;
+  border-bottom:2px solid transparent;
+  cursor:pointer;
+  font-size:13px;
+  font-weight:500;
+}
+.history-tab-btn.active{
+  border-bottom-color:var(--accent);
+  color:var(--accent);
+  font-weight:600;
+}
+.history-tab-btn:hover{background:#f5f7fa}
+.history-tab-content{display:none}
+.history-tab-content.active{display:block}
+
+/* History Summary Section */
+.history-summary-container{margin-bottom:12px}
+.history-summary-panel{
+  background:var(--card);
+  padding:16px;
+  border-radius:8px;
+  box-shadow:0 1px 6px rgba(0,0,0,0.06);
+}
+.history-summary-section h4{
+  margin:0 0 12px;
+  font-size:16px;
+  color:#2c3e50;
+}
+.summary-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+.summary-column{
+  background:#f8f9fb;
+  padding:12px;
+  border-radius:6px;
+  border-left:3px solid var(--accent);
+}
+.summary-column h5{
+  margin:0 0 10px;
+  font-size:14px;
+  color:#2c3e50;
+}
+.status-breakdown{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.status-item{
+  padding:6px 10px;
+  border-radius:4px;
+  font-size:13px;
+  font-weight:500;
+  background:white;
+  border-left:3px solid transparent;
+}
+.status-item.landed{
+  border-left-color:var(--success);
+  color:var(--success);
+}
+.status-item.delayed{
+  border-left-color:var(--warning);
+  color:var(--warning);
+}
+.status-item.cancelled{
+  border-left-color:var(--danger);
+  color:var(--danger);
+}
+.status-item.scheduled{
+  border-left-color:var(--muted);
+  color:var(--muted);
+}
+
