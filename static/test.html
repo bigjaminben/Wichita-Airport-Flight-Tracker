@@ -1,0 +1,31 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+<div id="test-chart" style="width:600px;height:400px;"></div>
+<script>
+fetch('/api/flights/all')
+  .then(r => r.json())
+  .then(data => {
+    console.log('Flights:', data.count);
+    const flights = data.flights || [];
+    const counts = {};
+    flights.forEach(f => {
+      const status = f.Status || 'Unknown';
+      counts[status] = (counts[status] || 0) + 1;
+    });
+    const labels = Object.keys(counts);
+    const values = labels.map(l => counts[l]);
+    const chartData = [{ type: 'pie', labels, values }];
+    const layout = { title: 'Test Chart' };
+    Plotly.newPlot('test-chart', chartData, layout);
+    document.body.innerHTML += '<p>Chart rendered! Flights: ' + flights.length + '</p>';
+  })
+  .catch(e => {
+    document.body.innerHTML += '<p>Error: ' + e.message + '</p>';
+  });
+</script>
+</body>
+</html>

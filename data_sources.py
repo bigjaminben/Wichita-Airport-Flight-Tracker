@@ -20,6 +20,28 @@ class FlightDataAggregator:
         self.last_fetch = {}
         self.cached_data = {}
         self.history_db = FlightHistoryDB()  # Initialize history database
+    
+    @staticmethod
+    def normalize_airport_code(text: str) -> str:
+        """
+        Normalize airport codes from various formats to clean 3-letter codes.
+        Examples: 'DenverDEN' -> 'DEN', 'Dallas/Fort WorthDFW' -> 'DFW'
+        """
+        if not text:
+            return text
+        
+        # Common airport codes - extract if found at end
+        import re
+        # Match 3-letter code at the end
+        match = re.search(r'([A-Z]{3})$', text)
+        if match:
+            return match.group(1)
+        
+        # Already clean 3-letter code
+        if len(text) == 3 and text.isupper():
+            return text
+        
+        return text  # Return as-is if can't parse
         
     def fetch_flightradar24_data(self, bounds: tuple = (34.0, 41.0, -102.0, -92.0)) -> List[Dict]:
         """
@@ -121,6 +143,14 @@ class FlightDataAggregator:
             logger.info(f"Fetched {len(flights)} ICT-bound flights from Flightradar24 (expanded search area)")
             self.cached_data[cache_key] = flights
             self.last_fetch[cache_key] = datetime.now()
+            
+            # Log operation
+            try:
+                from operations_logger import log_data_fetch
+                log_data_fetch(f"Flightradar24 data fetched: {len(flights)} flights", "success")
+            except:
+                pass
+            
             return flights
             
         except Exception as e:
@@ -179,7 +209,7 @@ class FlightDataAggregator:
                                 arrivals.append({
                                     'Flight_Number': flight_num,
                                     'Airline': airline or 'Unknown',
-                                    'Origin': origin,
+                                    'Origin': self.normalize_airport_code(origin),
                                     'Scheduled_Time': scheduled or 'N/A',
                                     'Actual_Time': actual or scheduled,
                                     'Status': status or 'Unknown',
@@ -214,7 +244,7 @@ class FlightDataAggregator:
                                 departures.append({
                                     'Flight_Number': flight_num,
                                     'Airline': airline or 'Unknown',
-                                    'Destination': destination,
+                                    'Destination': self.normalize_airport_code(destination),
                                     'Scheduled_Time': scheduled or 'N/A',
                                     'Actual_Time': actual or scheduled,
                                     'Status': status or 'Unknown',
@@ -313,6 +343,16 @@ class FlightDataAggregator:
             self.history_db.save_flights_batch(unique_flights)
         
         logger.info(f"Aggregated {len(unique_flights)} unique flights from all sources")
+        
+        # Log operation
+        try:
+            from operations_logger import log_data_fetch
+            arrivals = sum(1 for f in unique_flights if f.get('Type') == 'Arrival')
+            departures = sum(1 for f in unique_flights if f.get('Type') == 'Departure')
+            log_data_fetch(f"Flight data aggregated: {arrivals} arrivals, {departures} departures", "success")
+        except:
+            pass
+        
         return unique_flights
     
     def get_todays_history(self) -> Dict[str, List[Dict]]:

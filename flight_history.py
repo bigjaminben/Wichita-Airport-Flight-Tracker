@@ -224,3 +224,82 @@ class FlightHistoryDB:
                 
         except Exception as e:
             logger.error(f"Failed to cleanup old records: {e}")
+    
+    def get_flights_by_date_range(self, start_date: str, end_date: str = None):
+        """Get flights within a date range (format: YYYY-MM-DD)"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            if end_date is None:
+                end_date = datetime.now().strftime('%Y-%m-%d')
+            
+            # Parse dates and add time range for full day coverage
+            start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
+            end_datetime = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+            
+            cursor.execute("""
+                SELECT * FROM flights 
+                WHERE first_seen >= ? AND first_seen < ?
+                ORDER BY first_seen DESC
+            """, (start_datetime, end_datetime))
+            
+            flights = [dict(row) for row in cursor.fetchall()]
+            conn.close()
+            
+            return flights
+            
+        except Exception as e:
+            logger.error(f"Failed to get flights by date range: {e}")
+            return []
+    
+    def get_date_range_stats(self, start_date: str, end_date: str = None) -> Dict:
+        """Get statistics for a date range (format: YYYY-MM-DD)"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            if end_date is None:
+                end_date = datetime.now().strftime('%Y-%m-%d')
+            
+            # Parse dates and add time range
+            start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
+            end_datetime = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+            
+            cursor.execute("""
+                SELECT 
+                    COUNT(*) as total_flights,
+                    SUM(CASE WHEN flight_type = 'Arrival' THEN 1 ELSE 0 END) as arrivals,
+                    SUM(CASE WHEN flight_type = 'Departure' THEN 1 ELSE 0 END) as departures,
+                    SUM(CASE WHEN status LIKE '%Landed%' THEN 1 ELSE 0 END) as landed,
+                    SUM(CASE WHEN status LIKE '%Delayed%' THEN 1 ELSE 0 END) as delayed
+                FROM flights
+                WHERE first_seen >= ? AND first_seen < ?
+            """, (start_datetime, end_datetime))
+            
+            stats = cursor.fetchone()
+            conn.close()
+            
+            return {
+                'total_flights': stats[0] or 0,
+                'arrivals': stats[1] or 0,
+                'departures': stats[2] or 0,
+                'landed': stats[3] or 0,
+                'delayed': stats[4] or 0,
+                'start_date': start_date,
+                'end_date': end_date
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get date range stats: {e}")
+            return {
+                'total_flights': 0,
+                'arrivals': 0,
+                'departures': 0,
+                'landed': 0,
+                'delayed': 0,
+                'start_date': start_date,
+                'end_date': end_date or datetime.now().strftime('%Y-%m-%d')
+            }
+

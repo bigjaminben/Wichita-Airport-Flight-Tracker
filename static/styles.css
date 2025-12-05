@@ -1,21 +1,54 @@
 :root{
-  --bg:#f8f9fa;
+  /* Deloitte Brand Colors */
+  --deloitte-green:#86BC25;
+  --deloitte-black:#000000;
+  --deloitte-dark-gray:#2C2C2C;
+  --deloitte-light-gray:#53565A;
+  --deloitte-border:#D0D0CE;
+  --deloitte-bg:#F9F9F9;
+  
+  --bg:#F9F9F9;
   --card:#ffffff;
-  --accent:#3498db;
-  --success:#27ae60;
-  --warning:#f39c12;
-  --danger:#e74c3c;
-  --muted:#6c757d;
-  --border:#e1e6f0;
+  --accent:#86BC25;
+  --success:#86BC25;
+  --warning:#FFB800;
+  --danger:#DA291C;
+  --muted:#53565A;
+  --border:#D0D0CE;
+  --border-radius:4px;
 }
-body{font-family:Segoe UI, Roboto, Arial, sans-serif;background:var(--bg);color:#222;margin:0}
+body{font-family:'Segoe UI', 'Arial', 'Helvetica Neue', sans-serif;background:var(--deloitte-bg);color:var(--deloitte-dark-gray);margin:0;-webkit-font-smoothing:antialiased}
 
-/* Enhanced Header */
+/* Enhanced Header - Deloitte Theme */
 header{
-  background:linear-gradient(135deg,#1e3c72 0%,#2a5298 100%);
+  background:linear-gradient(135deg, var(--deloitte-black) 0%, #1a1a1a 100%);
   color:white;
-  padding:1.5rem 2rem;
-  box-shadow:0 2px 10px rgba(0,0,0,0.1);
+  padding:1.5rem 3rem;
+  box-shadow:0 4px 20px rgba(0,0,0,0.3);
+  border-bottom:4px solid var(--deloitte-green);
+  position:relative;
+  overflow:hidden;
+}
+/* Animated gradient background */
+header::before{
+  content:'';
+  position:absolute;
+  top:0;
+  left:-100%;
+  width:200%;
+  height:100%;
+  background:linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(134, 188, 37, 0.1) 25%,
+    rgba(134, 188, 37, 0.2) 50%,
+    rgba(134, 188, 37, 0.1) 75%,
+    transparent 100%);
+  animation:shimmer 8s ease-in-out infinite;
+  z-index:0;
+}
+@keyframes shimmer{
+  0%{left:-100%}
+  100%{left:100%}
 }
 .header-content{
   display:flex;
@@ -23,9 +56,139 @@ header{
   align-items:center;
   max-width:1600px;
   margin:0 auto;
+  position:relative;
+  z-index:1;
 }
-header h1{margin:0;font-size:1.8rem}
-header .subtitle{margin:0.5rem 0 0;opacity:0.9;font-size:0.95rem}
+/* Enhanced floating particles effect */
+.header-particles{
+  position:absolute;
+  width:100%;
+  height:100%;
+  top:0;
+  left:0;
+  overflow:hidden;
+  z-index:0;
+}
+.header-particles .particle{
+  position:absolute;
+  width:4px;
+  height:4px;
+  background:var(--deloitte-green);
+  border-radius:50%;
+  opacity:0;
+  box-shadow:0 0 10px rgba(134, 188, 37, 0.8);
+}
+.header-particles .particle:nth-child(1){
+  left:10%;
+  animation:floatParticle1 8s ease-in-out infinite;
+  animation-delay:0s;
+}
+.header-particles .particle:nth-child(2){
+  left:25%;
+  animation:floatParticle2 10s ease-in-out infinite;
+  animation-delay:2s;
+}
+.header-particles .particle:nth-child(3){
+  left:40%;
+  animation:floatParticle1 9s ease-in-out infinite;
+  animation-delay:4s;
+}
+.header-particles .particle:nth-child(4){
+  left:55%;
+  animation:floatParticle2 11s ease-in-out infinite;
+  animation-delay:1s;
+}
+.header-particles .particle:nth-child(5){
+  left:70%;
+  animation:floatParticle1 7s ease-in-out infinite;
+  animation-delay:3s;
+}
+.header-particles .particle:nth-child(6){
+  left:85%;
+  animation:floatParticle2 9s ease-in-out infinite;
+  animation-delay:5s;
+}
+.header-particles .particle:nth-child(7){
+  left:15%;
+  animation:floatParticle1 10s ease-in-out infinite;
+  animation-delay:6s;
+}
+.header-particles .particle:nth-child(8){
+  left:90%;
+  animation:floatParticle2 8s ease-in-out infinite;
+  animation-delay:2.5s;
+}
+@keyframes floatParticle1{
+  0%{opacity:0; transform:translateY(100px) scale(0.3)}
+  20%{opacity:0.7}
+  80%{opacity:0.7}
+  100%{opacity:0; transform:translateY(-120px) scale(1.2)}
+}
+@keyframes floatParticle2{
+  0%{opacity:0; transform:translateY(100px) translateX(0) scale(0.3)}
+  20%{opacity:0.6}
+  50%{transform:translateY(-60px) translateX(20px) scale(0.8)}
+  80%{opacity:0.6}
+  100%{opacity:0; transform:translateY(-120px) translateX(-20px) scale(1.2)}
+}
+.header-content::before,
+.header-content::after{
+  content:'●';
+  position:absolute;
+  color:var(--deloitte-green);
+  font-size:0.5rem;
+  opacity:0;
+  animation:floatParticle 6s ease-in-out infinite;
+  z-index:0;
+}
+.header-content::before{
+  left:20%;
+  animation-delay:0s;
+}
+.header-content::after{
+  right:30%;
+  animation-delay:3s;
+}
+@keyframes floatParticle{
+  0%{opacity:0; transform:translateY(20px) scale(0.5)}
+  50%{opacity:0.6; transform:translateY(-30px) scale(1)}
+  100%{opacity:0; transform:translateY(-50px) scale(0.5)}
+}
+header h1{
+  margin:0;
+  font-size:1.75rem;
+  font-weight:600;
+  letter-spacing:-0.5px;
+  display:flex;
+  align-items:center;
+  gap:1rem;
+  position:relative;
+  z-index:2;
+  text-shadow:0 2px 4px rgba(0,0,0,0.3);
+}
+header h1::before{
+  content:'';
+  display:inline-block;
+  width:80px;
+  height:60px;
+  background:url('/static/logo.png') no-repeat center;
+  background-size:contain;
+  animation:logoFloat 3s ease-in-out infinite;
+  filter:drop-shadow(0 0 10px rgba(134, 188, 37, 0.4));
+}
+@keyframes logoFloat{
+  0%,100%{transform:translateY(0px)}
+  50%{transform:translateY(-5px)}
+}
+header .subtitle{
+  margin:0.5rem 0 0 96px;
+  opacity:0.9;
+  font-size:0.95rem;
+  color:var(--deloitte-border);
+  position:relative;
+  z-index:2;
+  text-shadow:0 1px 2px rgba(0,0,0,0.3);
+}
 .header-right{
   display:flex;
   flex-direction:column;
@@ -34,39 +197,82 @@ header .subtitle{margin:0.5rem 0 0;opacity:0.9;font-size:0.95rem}
   font-size:0.9rem;
 }
 .live-indicator{
-  color:#4ade80;
+  color:var(--deloitte-green);
   font-weight:bold;
-  animation:pulse 2s infinite;
+  background:rgba(134, 188, 37, 0.15);
+  padding:0.5rem 1.2rem;
+  border-radius:6px;
+  border:2px solid var(--deloitte-green);
+  animation:pulseGlow 2s ease-in-out infinite;
+  box-shadow:0 0 15px rgba(134, 188, 37, 0.3);
+  position:relative;
+  z-index:2;
+  text-transform:uppercase;
+  letter-spacing:1px;
 }
-@keyframes pulse{
-  0%,100%{opacity:1}
-  50%{opacity:0.5}
+@keyframes pulseGlow{
+  0%,100%{
+    box-shadow:0 0 15px rgba(134, 188, 37, 0.3);
+    border-color:var(--deloitte-green);
+  }
+  50%{
+    box-shadow:0 0 25px rgba(134, 188, 37, 0.6), 0 0 40px rgba(134, 188, 37, 0.3);
+    border-color:rgba(134, 188, 37, 0.8);
+  }
 }
 .last-update{font-size:0.85rem;opacity:0.9}
-.container{display:flex;gap:20px;padding:20px}
-/* Sidebar Enhancements */
+.current-time{font-size:0.85rem;opacity:0.9}
+.container{display:flex;gap:24px;padding:2rem 3rem;max-width:1600px;margin:0 auto}
+
+/* Sidebar */
 .sidebar{
-  width:260px;
+  width:280px;
   background:var(--card);
-  padding:16px;
-  border-radius:8px;
-  box-shadow:0 1px 4px rgba(0,0,0,0.06);
+  padding:1.5rem;
+  border-radius:var(--border-radius);
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  border-left:3px solid var(--deloitte-green);
 }
-.sidebar h3{margin-top:0;margin-bottom:12px;font-size:14px;font-weight:600}
-.sidebar-section{margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.sidebar h3{margin-top:0;margin-bottom:1rem;font-size:0.9rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--deloitte-black)}
+.sidebar-section{margin-bottom:1.5rem;padding-bottom:1.25rem;border-bottom:1px solid var(--deloitte-border)}
 .sidebar-section:last-child{border-bottom:none}
 
 /* Stat Cards */
-.stat-cards{display:flex;flex-direction:column;gap:8px}
+.stat-cards{display:flex;flex-direction:column;gap:0.75rem}
 .stat-card{
-  background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-  color:white;
-  padding:12px;
-  border-radius:6px;
+  background:white;
+  color:var(--deloitte-black);
+  padding:1.25rem;
+  border-radius:var(--border-radius);
   text-align:center;
+  box-shadow:0 2px 6px rgba(0,0,0,0.08);
+  border-top:3px solid var(--deloitte-green);
+  transition:all 0.2s;
 }
-.stat-label{font-size:11px;opacity:0.9;text-transform:uppercase}
-.stat-value{font-size:24px;font-weight:700;margin-top:4px}
+.stat-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 4px 12px rgba(0,0,0,0.15);
+}
+.stat-value{
+  font-size:2.25rem;
+  font-weight:700;
+  margin:0.5rem 0;
+  color:var(--deloitte-green);
+}
+.stat-label{
+  font-size:0.8rem;
+  color:var(--deloitte-light-gray);
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  font-weight:600;
+}
+.stat-sublabel{
+  font-size:0.7rem;
+  color:var(--deloitte-light-gray);
+  margin-top:0.25rem;
+  font-weight:400;
+  font-style:italic;
+}
 
 /* Airport Details */
 .airport-details{display:flex;flex-direction:column;gap:8px}
@@ -74,220 +280,642 @@ header .subtitle{margin:0.5rem 0 0;opacity:0.9;font-size:0.95rem}
   display:flex;
   justify-content:space-between;
   padding:6px 8px;
-  background:#f8f9fb;
-  border-radius:4px;
+  background:var(--deloitte-bg);
+  border-radius:var(--border-radius);
   font-size:12px;
 }
 .detail-item .label{color:var(--muted);font-weight:500}
-.detail-item .value{color:#2c3e50;font-weight:600}
+.detail-item .value{color:var(--deloitte-black);font-weight:600}
 
 /* Refresh Button */
-.refresh-button{
+.refresh-button, button.refresh-btn{
   width:100%;
-  padding:10px;
-  border-radius:6px;
-  border:none;
-  background:linear-gradient(135deg,#3498db,#2980b9);
+  padding:0.75rem;
+  background:var(--deloitte-black);
   color:white;
-  font-weight:600;
-  cursor:pointer;
-  transition:all 0.2s;
-}
-.refresh-button:hover{
-  transform:translateY(-2px);
-  box-shadow:0 4px 12px rgba(52,152,219,0.3);
-}
-.refresh-button:active{transform:translateY(0)}
-/* Main Content Layout */
-.main{flex:1;display:flex;flex-direction:column;gap:12px}
-.data-section{display:flex;flex-direction:column;gap:12px}
-.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.chart-card{background:var(--card);padding:12px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,0.06);min-height:260px}
-.panels{display:flex;gap:12px;flex:1}
-.panel{flex:1;background:var(--card);padding:16px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,0.06);overflow:auto;max-height:600px}
-.panel-header{margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--border)}
-.panel-header h4{margin:0;font-size:16px}
-.badge{background:var(--accent);color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600;margin-left:4px}
-.tabs{display:flex;gap:4px;margin-bottom:12px;border-bottom:1px solid var(--border)}
-.tab-btn{padding:8px 14px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:13px;font-weight:500}
-.tab-btn.active{border-bottom-color:var(--accent);color:var(--accent);font-weight:600}
-.tab-btn:hover{background:#f5f7fa}
-.tab-content{display:none}
-.tab-content.active{display:block}
-.flight-list{display:flex;flex-direction:column;gap:8px}
-.flight-card{background:#f8f9fb;border-left:3px solid var(--accent);padding:10px;border-radius:4px;transition:all 0.2s}
-.flight-card:hover{box-shadow:0 2px 8px rgba(0,0,0,0.08);transform:translateX(2px)}
-.flight-card.landed{border-left-color:var(--success)}
-.flight-card.delayed{border-left-color:var(--warning)}
-.flight-card.cancelled{border-left-color:var(--danger)}
-.flight-card.arriving{border-left-color:#3498db}
-.flight-card.departing{border-left-color:#9b59b6}
-.flight-card.scheduled{border-left-color:var(--muted)}
-.flight-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-.flight-number{font-weight:700;font-size:14px;color:#2c3e50}
-.flight-status{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;text-transform:uppercase}
-.status-landed{background:#d4edda;color:#155724}
-.status-delayed{background:#fff3cd;color:#856404}
-.status-cancelled{background:#f8d7da;color:#721c24}
-.status-arriving{background:#d1ecf1;color:#0c5460}
-.status-departing{background:#e8daef;color:#6c3483}
-.status-scheduled{background:#e2e3e5;color:#383d41}
-.status-unknown{background:#f8f9fa;color:#6c757d}
-.flight-details{display:flex;flex-direction:column;gap:3px}
-.detail-row{display:flex;justify-content:space-between;font-size:12px}
-.detail-row .label{color:var(--muted);font-weight:500}
-.detail-row .value{color:#2c3e50;font-weight:600}
-/* Weather Display */
-.weather-display{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
-.weather-panel{margin-bottom:12px}
-.loading-spinner{
-  text-align:center;
-  padding:40px 20px;
-  color:var(--muted);
-  font-size:14px;
-  font-style:italic;
-}
-.weather-card{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:12px;border-radius:8px;text-align:center}
-.weather-card h5{margin:0 0 8px;font-size:13px;opacity:0.9}
-.weather-temp{font-size:28px;font-weight:700;margin:8px 0}
-.weather-details{font-size:11px;margin-top:8px;opacity:0.95}
-.weather-details div{margin:2px 0}
-.airport-info-section{margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
-.airport-info-section h4{margin:0 0 12px;font-size:14px}
-.info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-.info-card{background:#f8f9fb;padding:10px;border-radius:6px;border-left:3px solid var(--accent)}
-.info-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:4px}
-.info-value{font-size:13px;color:#2c3e50;font-weight:600}
-.empty-state,.loading-state,.error-state{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px}
-.error-state{color:var(--danger)}
-/* Footer */
-footer{
-  padding:16px 24px;
-  background:#f8f9fa;
-  border-top:1px solid var(--border);
-}
-.footer-content{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  max-width:1600px;
-  margin:0 auto;
-  font-size:12px;
-  color:var(--muted);
-}
-.footer-left strong{color:#2c3e50}
-.footer-right{text-align:right}
-.small{font-size:12px}
-#flight-count{background:var(--success)}
-
-/* History Tab Styles */
-.history-stats{
-  background:#f8f9fb;
-  padding:12px 16px;
-  border-radius:6px;
-  margin-bottom:12px;
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:12px;
-}
-.history-stat{
-  text-align:center;
-  padding:8px;
-  background:white;
-  border-radius:4px;
-  border-left:3px solid var(--accent);
-}
-.history-stat-label{
-  font-size:11px;
-  color:var(--muted);
-  text-transform:uppercase;
-  margin-bottom:4px;
-}
-.history-stat-value{
-  font-size:24px;
+  border:2px solid var(--deloitte-green);
+  border-radius:var(--border-radius);
   font-weight:700;
-  color:#2c3e50;
-}
-.history-tabs{
-  display:flex;
-  gap:4px;
-  margin-bottom:12px;
-  border-bottom:1px solid var(--border);
-}
-.history-tab-btn{
-  padding:8px 14px;
-  background:none;
-  border:none;
-  border-bottom:2px solid transparent;
   cursor:pointer;
-  font-size:13px;
-  font-weight:500;
+  transition:all 0.3s;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  font-size:0.85rem;
 }
-.history-tab-btn.active{
-  border-bottom-color:var(--accent);
-  color:var(--accent);
+.refresh-button:hover, button.refresh-btn:hover{
+  background:var(--deloitte-green);
+  color:var(--deloitte-black);
+  transform:translateY(-2px);
+  box-shadow:0 4px 8px rgba(134, 188, 37, 0.3);
+}
+.refresh-button:active, button.refresh-btn:active{transform:translateY(0)}
+
+/* Operations Button */
+.operations-button{
+  display:block;
+  width:100%;
+  padding:0.75rem;
+  background:var(--deloitte-green);
+  color:white;
+  border:2px solid var(--deloitte-green);
+  border-radius:var(--border-radius);
+  font-weight:700;
+  cursor:pointer;
+  transition:all 0.3s;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  font-size:0.85rem;
+  text-align:center;
+  text-decoration:none;
+}
+.operations-button:hover{
+  background:#6b9a1f;
+  border-color:#6b9a1f;
+  transform:translateY(-2px);
+  box-shadow:0 4px 12px rgba(134, 188, 37, 0.4);
+}
+.operations-button:active{transform:translateY(0)}
+
+/* Main Content */
+.main, .main-content{flex:1;display:flex;flex-direction:column;gap:1.5rem}
+.data-section{display:flex;flex-direction:column;gap:1.5rem}
+.charts, .charts-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.5rem;margin-bottom:2rem}
+.chart-card, .chart-box{
+  background:var(--card);
+  padding:1.5rem;
+  border-radius:var(--border-radius);
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  border-top:3px solid var(--deloitte-green);
+  min-height:260px;
+}
+
+/* History Summary */
+.history-summary-container{margin-bottom:1.5rem}
+.history-summary-panel{
+  background:white;
+  padding:1.5rem;
+  border-radius:var(--border-radius);
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  border-left:3px solid var(--deloitte-green);
+}
+.history-summary-panel h4{
+  margin-top:0;
+  margin-bottom:0.5rem;
+  color:var(--deloitte-black);
+  font-size:1.1rem;
   font-weight:600;
 }
-.history-tab-btn:hover{background:#f5f7fa}
-.history-tab-content{display:none}
-.history-tab-content.active{display:block}
-
-/* History Summary Section */
-.history-summary-container{margin-bottom:12px}
-.history-summary-panel{
-  background:var(--card);
-  padding:16px;
-  border-radius:8px;
-  box-shadow:0 1px 6px rgba(0,0,0,0.06);
-}
-.history-summary-section h4{
-  margin:0 0 12px;
-  font-size:16px;
-  color:#2c3e50;
+.summary-description{
+  font-size:0.85rem;
+  color:var(--deloitte-light-gray);
+  margin:0 0 1.25rem 0;
+  font-style:italic;
 }
 .summary-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:16px;
+  gap:1.5rem;
 }
 .summary-column{
-  background:#f8f9fb;
-  padding:12px;
-  border-radius:6px;
-  border-left:3px solid var(--accent);
+  background:var(--deloitte-bg);
+  padding:1rem;
+  border-radius:var(--border-radius);
+  border-left:3px solid var(--deloitte-green);
 }
 .summary-column h5{
-  margin:0 0 10px;
-  font-size:14px;
-  color:#2c3e50;
+  margin:0 0 1rem 0;
+  color:var(--deloitte-black);
+  font-weight:600;
 }
 .status-breakdown{
   display:flex;
   flex-direction:column;
-  gap:6px;
+  gap:0.5rem;
 }
 .status-item{
-  padding:6px 10px;
-  border-radius:4px;
-  font-size:13px;
+  padding:0.5rem;
+  border-radius:var(--border-radius);
+  font-size:0.9rem;
   font-weight:500;
+}
+.status-item.landed{background:rgba(134,188,37,0.1);color:var(--deloitte-green)}
+.status-item.delayed{background:rgba(255,184,0,0.1);color:var(--warning)}
+.status-item.cancelled{background:rgba(218,41,28,0.1);color:var(--danger)}
+.status-item.scheduled{background:rgba(83,86,90,0.1);color:var(--muted)}
+
+/* Route Analysis */
+.route-analysis-container{margin-bottom:1.5rem}
+.route-analysis-panel{
   background:white;
+  padding:1.5rem;
+  border-radius:var(--border-radius);
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  border-left:3px solid var(--deloitte-green);
+}
+.route-analysis-panel h3{
+  margin-top:0;
+  margin-bottom:1.25rem;
+  color:var(--deloitte-black);
+  font-size:1.1rem;
+  font-weight:600;
+}
+.route-columns{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:1.5rem;
+}
+.route-column{
+  background:var(--deloitte-bg);
+  padding:1.25rem;
+  border-radius:var(--border-radius);
+  border-left:3px solid var(--deloitte-green);
+}
+.route-column h4{
+  margin:0 0 1rem 0;
+  color:var(--deloitte-black);
+  font-weight:600;
+  font-size:0.95rem;
+  text-transform:uppercase;
+  letter-spacing:0.3px;
+}
+.route-list{
+  display:flex;
+  flex-direction:column;
+  gap:0.75rem;
+}
+.route-item{
+  display:flex;
+  flex-direction:column;
+  gap:0.5rem;
+  background:white;
+  padding:0.75rem 1rem;
+  border-radius:var(--border-radius);
+  border-left:3px solid var(--deloitte-green);
+  box-shadow:0 1px 2px rgba(0,0,0,0.05);
+  transition:all 0.2s;
+}
+.route-item:hover{
+  transform:translateX(5px);
+  box-shadow:0 2px 4px rgba(0,0,0,0.1);
+}
+.route-info{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.route-airport{
+  font-weight:600;
+  color:var(--deloitte-black);
+  font-size:0.95rem;
+}
+.route-count{
+  color:var(--deloitte-green);
+  font-weight:700;
+  font-size:0.9rem;
+}
+.route-metrics{
+  display:flex;
+  gap:0.5rem;
+  flex-wrap:wrap;
+}
+.efficiency-badge{
+  display:inline-block;
+  padding:0.25rem 0.75rem;
+  border-radius:6px;
+  font-size:0.8rem;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.3px;
+}
+.efficiency-good{
+  background:rgba(134,188,37,0.15);
+  color:var(--deloitte-green);
+  border:1px solid var(--deloitte-green);
+}
+.efficiency-medium{
+  background:rgba(255,184,0,0.15);
+  color:var(--warning);
+  border:1px solid var(--warning);
+}
+.efficiency-poor{
+  background:rgba(218,41,28,0.15);
+  color:var(--danger);
+  border:1px solid var(--danger);
+}
+
+
+/* Tabs */
+.tabs{display:flex;gap:0;margin-bottom:0;border-bottom:2px solid var(--deloitte-border)}
+.tab-btn{
+  flex:1;
+  padding:1rem 1.5rem;
+  border:none;
+  background:white;
+  cursor:pointer;
+  font-size:0.95rem;
+  font-weight:600;
+  transition:all 0.3s;
+  border-radius:0;
+  border-bottom:3px solid transparent;
+  color:var(--deloitte-light-gray);
+  text-transform:uppercase;
+  letter-spacing:0.3px;
+}
+.tab-btn.active{
+  background:white;
+  color:var(--deloitte-black);
+  border-bottom:3px solid var(--deloitte-green);
+}
+.tab-btn:hover:not(.active){
+  background:var(--deloitte-bg);
+  color:var(--deloitte-black);
+}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* Panels */
+.panels{display:flex;gap:12px;flex:1}
+.panel, .data-panel{
+  flex:1;
+  background:var(--card);
+  padding:1.5rem;
+  border-radius:0 0 2px 2px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  overflow:auto;
+  max-height:600px;
+}
+.panel-header{
+  margin-bottom:12px;
+  padding-bottom:8px;
+  border-bottom:2px solid var(--deloitte-border);
+}
+.panel-header h4{margin:0;font-size:16px;color:var(--deloitte-black);font-weight:600}
+.badge{background:var(--deloitte-green);color:#fff;padding:2px 8px;border-radius:var(--border-radius);font-size:12px;font-weight:600;margin-left:4px}
+
+/* Flight Cards */
+.flight-list{display:flex;flex-direction:column;gap:1rem}
+.flight-card{
+  background:white;
+  padding:1.25rem;
+  border-radius:var(--border-radius);
+  border-left:4px solid var(--deloitte-green);
+  box-shadow:0 2px 6px rgba(0,0,0,0.08);
+  transition:all 0.2s;
+}
+.flight-card:hover{
+  transform:translateX(5px);
+  box-shadow:0 4px 12px rgba(0,0,0,0.15);
+  border-left-color:var(--deloitte-black);
+}
+.flight-number{
+  font-weight:700;
+  font-size:1.2rem;
+  color:var(--deloitte-black);
+  margin-bottom:0.5rem;
+}
+.flight-details{
+  display:flex;
+  flex-wrap:wrap;
+  gap:1rem;
+  margin-top:0.75rem;
+  font-size:0.9rem;
+  color:var(--deloitte-light-gray);
+}
+.flight-detail-item strong{
+  color:var(--deloitte-black);
+  font-weight:600;
+}
+.status-badge{
+  display:inline-block;
+  padding:0.25rem 0.75rem;
+  border-radius:var(--border-radius);
+  font-size:0.8rem;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.3px;
+}
+.status-badge.on-time, .status-badge.landed{background:rgba(134,188,37,0.1);color:var(--success)}
+.status-badge.delayed{background:rgba(255,184,0,0.1);color:var(--warning)}
+.status-badge.cancelled{background:rgba(218,41,28,0.1);color:var(--danger)}
+
+/* Transit Time Metrics */
+.detail-row.transit-metric{
+  background:rgba(134,188,37,0.05);
+  padding:0.5rem;
+  border-radius:var(--border-radius);
+  margin:0.25rem 0;
+  border-left:3px solid var(--deloitte-green);
+}
+.transit-ontime{
+  color:var(--deloitte-green);
+  font-weight:700;
+}
+.transit-delayed{
+  color:var(--danger);
+  font-weight:700;
+}
+.transit-scheduled{
+  color:var(--deloitte-light-gray);
+  font-weight:600;
+}
+.transit-complete{
+  color:var(--deloitte-green);
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+}
+
+/* Weather Panel */
+.weather-panel{
+  background:white;
+  padding:1.5rem;
+  border-radius:var(--border-radius);
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  border-left:3px solid var(--deloitte-green);
+}
+.weather-panel h3{
+  margin-top:0;
+  margin-bottom:1rem;
+  font-size:1.1rem;
+  color:var(--deloitte-black);
+  font-weight:600;
+}
+.weather-cards{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:0.75rem;
+}
+.weather-card{
+  background:var(--deloitte-bg);
+  padding:1rem;
+  border-radius:var(--border-radius);
+  border-top:2px solid var(--deloitte-green);
+}
+.weather-card h5{
+  margin:0 0 0.5rem 0;
+  font-size:0.85rem;
+  color:var(--deloitte-black);
+  font-weight:700;
+}
+.weather-temp{
+  font-size:1.75rem;
+  font-weight:700;
+  color:var(--deloitte-green);
+  margin:0.5rem 0;
+}
+.weather-details{
+  font-size:0.8rem;
+  color:var(--deloitte-light-gray);
+  display:flex;
+  flex-direction:column;
+  gap:0.25rem;
+}
+
+/* Utility Classes */
+.empty-state{
+  text-align:center;
+  padding:3rem 1rem;
+  color:var(--muted);
+  font-size:1rem;
+}
+.loading-spinner{
+  text-align:center;
+  padding:2rem;
+  color:var(--deloitte-green);
+  font-size:1rem;
+}
+
+/* Footer */
+footer{
+  background:var(--deloitte-black);
+  color:white;
+  padding:2.5rem 3rem;
+  margin-top:3rem;
+  border-top:4px solid var(--deloitte-green);
+}
+.footer-content{
+  max-width:1600px;
+  margin:0 auto;
+  display:flex;
+  align-items:center;
+  gap:2rem;
+}
+.footer-brand img{
+  height:40px;
+  width:auto;
+}
+.footer-info{flex:1}
+.footer-info p{
+  margin:0.5rem 0;
+  font-size:0.9rem;
+  color:var(--deloitte-border);
+}
+.footer-info p:first-child{
+  font-size:1.1rem;
+  font-weight:600;
+  color:white;
+}
+.footer-info p:last-child{
+  font-size:0.85rem;
+  color:var(--deloitte-light-gray);
+  margin-top:0.75rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px){
+  .container{flex-direction:column;padding:1.5rem}
+  .sidebar{width:100%}
+  .charts, .charts-grid{grid-template-columns:1fr}
+  .weather-cards{grid-template-columns:repeat(2, 1fr)}
+}
+@media (max-width: 768px){
+  header{padding:1rem 1.5rem}
+  header h1{font-size:1.25rem}
+  header h1::before{width:60px;height:45px}
+  header .subtitle{font-size:0.85rem;margin-left:76px}
+  .weather-cards{grid-template-columns:1fr}
+  .summary-grid{grid-template-columns:1fr}
+}
+
+/* Operations Log Section */
+.operations-log-section{
+  background:var(--card);
+  border-radius:10px;
+  padding:1.25rem;
+  box-shadow:0 2px 10px rgba(0,0,0,0.08);
+  border-left:4px solid var(--deloitte-green);
+  margin-top:1rem;
+}
+.operations-log-section h3{
+  margin:0 0 1rem 0;
+  font-size:1.1rem;
+  color:var(--deloitte-dark-gray);
+  display:flex;
+  align-items:center;
+  gap:0.5rem;
+}
+.operations-log-container{
+  display:flex;
+  flex-direction:column;
+  gap:1rem;
+}
+.operations-summary{
+  background:linear-gradient(135deg, var(--deloitte-green) 0%, #6b9a1f 100%);
+  color:white;
+  padding:1rem;
+  border-radius:8px;
+  box-shadow:0 2px 6px rgba(134, 188, 37, 0.3);
+}
+.operations-summary h4{
+  margin:0 0 0.75rem 0;
+  font-size:0.95rem;
+  opacity:0.9;
+}
+.ops-stats{
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:0.75rem;
+}
+.ops-stat{
+  background:rgba(255,255,255,0.15);
+  padding:0.75rem;
+  border-radius:6px;
+  backdrop-filter:blur(10px);
+}
+.ops-stat-label{
+  font-size:0.75rem;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  opacity:0.9;
+  margin-bottom:0.25rem;
+}
+.ops-stat-value{
+  font-size:1.5rem;
+  font-weight:700;
+}
+.ops-status-indicators{
+  display:flex;
+  gap:0.5rem;
+  margin-top:0.5rem;
+  font-size:0.75rem;
+}
+.ops-status-indicator{
+  display:flex;
+  align-items:center;
+  gap:0.25rem;
+  background:rgba(255,255,255,0.2);
+  padding:0.25rem 0.5rem;
+  border-radius:12px;
+}
+.status-dot{
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  display:inline-block;
+}
+.status-dot.success{background:#4CAF50}
+.status-dot.warning{background:#FFB800}
+.status-dot.error{background:#DA291C}
+.status-dot.info{background:#2196F3}
+
+.operations-list{
+  max-height:400px;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:0.5rem;
+}
+.operations-list::-webkit-scrollbar{
+  width:6px;
+}
+.operations-list::-webkit-scrollbar-track{
+  background:var(--deloitte-bg);
+  border-radius:6px;
+}
+.operations-list::-webkit-scrollbar-thumb{
+  background:var(--deloitte-green);
+  border-radius:6px;
+}
+.operation-item{
+  background:white;
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:0.75rem;
+  transition:all 0.2s ease;
   border-left:3px solid transparent;
 }
-.status-item.landed{
-  border-left-color:var(--success);
-  color:var(--success);
+.operation-item:hover{
+  border-left-color:var(--deloitte-green);
+  box-shadow:0 2px 6px rgba(0,0,0,0.1);
+  transform:translateX(2px);
 }
-.status-item.delayed{
-  border-left-color:var(--warning);
-  color:var(--warning);
+.operation-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  margin-bottom:0.5rem;
 }
-.status-item.cancelled{
-  border-left-color:var(--danger);
-  color:var(--danger);
-}
-.status-item.scheduled{
-  border-left-color:var(--muted);
+.operation-time{
+  font-size:0.75rem;
   color:var(--muted);
+  font-weight:600;
 }
+.operation-category{
+  font-size:0.7rem;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  padding:0.25rem 0.5rem;
+  border-radius:4px;
+  font-weight:600;
+}
+.category-backup{
+  background:rgba(76, 175, 80, 0.1);
+  color:#4CAF50;
+  border:1px solid rgba(76, 175, 80, 0.3);
+}
+.category-data-fetch{
+  background:rgba(33, 150, 243, 0.1);
+  color:#2196F3;
+  border:1px solid rgba(33, 150, 243, 0.3);
+}
+.category-system{
+  background:rgba(134, 188, 37, 0.1);
+  color:#6b9a1f;
+  border:1px solid rgba(134, 188, 37, 0.3);
+}
+.category-monitoring{
+  background:rgba(255, 184, 0, 0.1);
+  color:#FFB800;
+  border:1px solid rgba(255, 184, 0, 0.3);
+}
+.operation-text{
+  font-size:0.85rem;
+  color:var(--deloitte-dark-gray);
+  line-height:1.4;
+  margin-bottom:0.25rem;
+}
+.operation-details{
+  font-size:0.75rem;
+  color:var(--muted);
+  font-style:italic;
+}
+.operation-status{
+  display:inline-block;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  margin-right:0.5rem;
+}
+.operation-status.success{background:#4CAF50}
+.operation-status.warning{background:#FFB800}
+.operation-status.error{background:#DA291C}
+.operation-status.info{background:#2196F3}
+.no-operations{
+  text-align:center;
+  padding:2rem 1rem;
+  color:var(--muted);
+  font-size:0.9rem;
+  font-style:italic;
+}
+
 

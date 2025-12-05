@@ -3,21 +3,32 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Airport Tracker - Web UI</title>
+  <title>Wichita Airport Flight Tracker | Deloitte</title>
   <link rel="stylesheet" href="/static/styles.css">
   <!-- Plotly CDN for interactive charts -->
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
   <header>
+    <div class="header-particles">
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+    </div>
     <div class="header-content">
       <div>
-        <h1>✈️ Wichita Dwight D. Eisenhower National Airport</h1>
+        <h1>Wichita Dwight D. Eisenhower National Airport</h1>
         <p class="subtitle">ICT • Live Flight Tracking & Operations Dashboard</p>
       </div>
       <div class="header-right">
         <span class="live-indicator">● LIVE</span>
         <span class="last-update">Updated: <span id="last-updated">--:--</span></span>
+        <span class="current-time">Current Time: <span id="current-time">--:--</span></span>
       </div>
     </div>
   </header>
@@ -25,25 +36,28 @@
   <div class="container">
     <aside class="sidebar">
       <div class="sidebar-section">
-        <h3>🎛️ Quick Stats</h3>
+        <h3>Current Live Flights</h3>
         <div class="stat-cards">
           <div class="stat-card">
-            <div class="stat-label">Total Flights</div>
+            <div class="stat-label">Active Now</div>
             <div class="stat-value" id="total-flights">0</div>
+            <div class="stat-sublabel">Scheduled + In-Air</div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Arrivals</div>
             <div class="stat-value" id="total-arrivals">0</div>
+            <div class="stat-sublabel">Arriving Today</div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Departures</div>
             <div class="stat-value" id="total-departures">0</div>
+            <div class="stat-sublabel">Departing Today</div>
           </div>
         </div>
       </div>
 
       <div class="sidebar-section">
-        <h3>ℹ️ Airport Info</h3>
+        <h3>Airport Information</h3>
         <div class="airport-details">
           <div class="detail-item">
             <span class="label">Code</span>
@@ -69,16 +83,22 @@
       </div>
 
       <div class="sidebar-section">
-        <button id="refresh-now" class="refresh-button">🔄 Refresh Data</button>
+        <button id="refresh-now" class="refresh-button">Refresh Data</button>
+      </div>
+
+      <div class="sidebar-section">
+        <a href="/static/operations.html" class="operations-button">
+          Activity and System Log
+        </a>
       </div>
     </aside>
 
     <main class="main">
       <section class="charts">
-        <div id="chart-status" class="chart-card"></div>
-        <div id="chart-hourly" class="chart-card"></div>
-        <div id="chart-airline" class="chart-card"></div>
-        <div id="chart-map" class="chart-card"></div>
+        <div id="chart-status" class="chart-card"><div class="loading-spinner">Loading chart...</div></div>
+        <div id="chart-hourly" class="chart-card"><div class="loading-spinner">Loading chart...</div></div>
+        <div id="chart-airline" class="chart-card"><div class="loading-spinner">Loading chart...</div></div>
+        <div id="chart-map" class="chart-card"><div class="loading-spinner">Loading chart...</div></div>
       </section>
 
       <section class="history-summary-container">
@@ -91,11 +111,11 @@
         <div class="panels">
           <div class="panel flights-panel">
             <div class="panel-header">
-              <h4>✈️ Live Flights <span id="flight-count" class="badge">0</span></h4>
+              <h4>Live Flights <span id="flight-count" class="badge">0</span></h4>
             </div>
             <div class="tabs">
-              <button class="tab-btn active" data-tab="arrivals">🛬 Arrivals</button>
-              <button class="tab-btn" data-tab="departures">🛫 Departures</button>
+              <button class="tab-btn active" data-tab="arrivals">Arrivals</button>
+              <button class="tab-btn" data-tab="departures">Departures</button>
             </div>
             <div id="arrivals" class="tab-content active">
               <div class="flight-list" id="arrivals-list">
@@ -111,7 +131,7 @@
           
           <div class="panel weather-panel">
             <div class="panel-header">
-              <h4>🌤️ Current Weather Conditions</h4>
+              <h4>Current Weather Conditions</h4>
             </div>
             <div class="weather-display" id="weather-cards">
               <div class="loading-spinner">Loading weather...</div>
@@ -119,18 +139,24 @@
           </div>
         </div>
       </section>
+
+      <section class="route-analysis-container">
+        <div id="route-analysis" class="route-analysis-panel">
+          <div class="loading-spinner">Loading route analysis...</div>
+        </div>
+      </section>
     </main>
   </div>
 
   <footer>
     <div class="footer-content">
-      <div class="footer-left">
-        <p><strong>Wichita Dwight D. Eisenhower National Airport (ICT)</strong></p>
-        <p class="small">Data Sources: Flightradar24 • Airportia • Open-Meteo</p>
+      <div class="footer-brand">
+        <img src="/static/logo.png" alt="Deloitte">
       </div>
-      <div class="footer-right">
-        <p class="small">Auto-refresh: Every 15 seconds</p>
-        <p class="small">All times displayed in Central Time (CT)</p>
+      <div class="footer-info">
+        <p>Wichita Airport Flight Tracker</p>
+        <p>Data refreshes every 15 seconds | Real-time flight tracking and weather monitoring</p>
+        <p>&copy; 2025 Deloitte. All rights reserved.</p>
       </div>
     </div>
   </footer>

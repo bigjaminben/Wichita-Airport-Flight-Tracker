@@ -1,0 +1,25 @@
+{
+  "timestamp": "2025-12-05T15:03:58.224854",
+  "api": {
+    "status": "error",
+    "error": "HTTPConnectionPool(host='127.0.0.1', port=5001): Read timed out. (read timeout=10)"
+  },
+  "database": {
+    "status": "healthy",
+    "size_mb": 0.09,
+    "total_records": 323,
+    "today_records": 233
+  },
+  "system": {
+    "status": "error",
+    "error": "argument 1 must be str, not WindowsPath"
+  },
+  "backups": {
+    "status": "healthy",
+    "total_backups": 7,
+    "total_size_mb": 0.52,
+    "latest_backup_age_hours": 0.4,
+    "latest_backup": "flight_history_hourly_20251205_144249.db"
+  },
+  "overall": "critical"
+}

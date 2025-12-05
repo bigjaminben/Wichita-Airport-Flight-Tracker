@@ -128,6 +128,8 @@ class AirportFlightTrackerWithGraphs:
             'ATL': {'name': 'Atlanta', 'lat': 33.64, 'lon': -84.43},
             'PHX': {'name': 'Phoenix', 'lat': 33.43, 'lon': -112.01},
             'ORD': {'name': 'Chicago', 'lat': 41.98, 'lon': -87.90},
+            'IAH': {'name': 'Houston', 'lat': 29.98, 'lon': -95.34},
+            'MSP': {'name': 'Minneapolis', 'lat': 44.88, 'lon': -93.22},
         }
         
         for code, info in airports.items():
@@ -173,6 +175,12 @@ class AirportFlightTrackerWithGraphs:
         
         if self.weather_data:
             logger.info(f"Fetched live weather for {len(self.weather_data)} airports")
+            # Log operation
+            try:
+                from operations_logger import log_data_fetch
+                log_data_fetch(f"Weather data fetched for {len(self.weather_data)} airports", "success")
+            except:
+                pass
         else:
             logger.warning("No weather data available")
     

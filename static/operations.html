@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Activity and System Log | ICT Flight Tracker</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <style>
+    .operations-page {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .operations-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+    .operations-header h1 {
+      margin: 0;
+      color: var(--deloitte-dark-gray);
+      font-size: 2rem;
+    }
+    .back-button {
+      background: var(--deloitte-green);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .back-button:hover {
+      background: #6b9a1f;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(134, 188, 37, 0.3);
+    }
+    .operations-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+    .summary-card {
+      background: linear-gradient(135deg, var(--deloitte-green) 0%, #6b9a1f 100%);
+      color: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(134, 188, 37, 0.3);
+    }
+    .summary-card h2 {
+      margin: 0 0 1.5rem 0;
+      font-size: 1.5rem;
+    }
+    .summary-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+    .summary-stat {
+      background: rgba(255,255,255,0.15);
+      padding: 1.25rem;
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+    }
+    .summary-stat-label {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      opacity: 0.9;
+      margin-bottom: 0.5rem;
+    }
+    .summary-stat-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .summary-indicators {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+    }
+    .summary-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255,255,255,0.2);
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+    .indicator-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .indicator-dot.success { background: #4CAF50; }
+    .indicator-dot.info { background: #2196F3; }
+    .indicator-dot.warning { background: #FFB800; }
+    .indicator-dot.error { background: #DA291C; }
+    .category-breakdown {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      border-left: 4px solid var(--deloitte-green);
+    }
+    .category-breakdown h2 {
+      margin: 0 0 1.5rem 0;
+      font-size: 1.5rem;
+      color: var(--deloitte-dark-gray);
+    }
+    .category-items {
+      display: grid;
+      gap: 1rem;
+    }
+    .category-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: var(--deloitte-bg);
+      border-radius: 6px;
+      border-left: 3px solid transparent;
+      transition: all 0.2s ease;
+    }
+    .category-item:hover {
+      border-left-color: var(--deloitte-green);
+      transform: translateX(4px);
+    }
+    .category-name {
+      font-weight: 600;
+      color: var(--deloitte-dark-gray);
+    }
+    .category-count {
+      background: var(--deloitte-green);
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .operations-timeline {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      border-left: 4px solid var(--deloitte-green);
+    }
+    .operations-timeline h2 {
+      margin: 0 0 1.5rem 0;
+      font-size: 1.5rem;
+      color: var(--deloitte-dark-gray);
+    }
+    .timeline-filters {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 0.5rem 1rem;
+      border: 2px solid var(--border);
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+    }
+    .filter-btn:hover {
+      border-color: var(--deloitte-green);
+      color: var(--deloitte-green);
+    }
+    .filter-btn.active {
+      background: var(--deloitte-green);
+      border-color: var(--deloitte-green);
+      color: white;
+    }
+    .timeline-list {
+      max-height: 600px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .timeline-list::-webkit-scrollbar {
+      width: 8px;
+    }
+    .timeline-list::-webkit-scrollbar-track {
+      background: var(--deloitte-bg);
+      border-radius: 4px;
+    }
+    .timeline-list::-webkit-scrollbar-thumb {
+      background: var(--deloitte-green);
+      border-radius: 4px;
+    }
+    @media (max-width: 1024px) {
+      .operations-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-particles">
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+    </div>
+    <div class="header-content">
+      <div>
+        <h1>Activity and System Log</h1>
+        <p class="subtitle">ICT Flight Tracker • Activity & System Monitoring</p>
+      </div>
+      <div class="header-right">
+        <span class="live-indicator">● LIVE</span>
+        <span class="last-update">Updated: <span id="last-updated">--:--</span></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="operations-page">
+    <div class="operations-header">
+      <h1>Activity and System Log</h1>
+      <a href="/static/index.html" class="back-button">
+        Back to Dashboard
+      </a>
+    </div>
+
+    <div class="operations-grid">
+      <div class="summary-card">
+        <h2>Today's Summary</h2>
+        <div class="summary-stats">
+          <div class="summary-stat">
+            <div class="summary-stat-label">Total Operations</div>
+            <div class="summary-stat-value" id="total-ops">0</div>
+          </div>
+          <div class="summary-stat">
+            <div class="summary-stat-label">Success Rate</div>
+            <div class="summary-stat-value" id="success-rate">0%</div>
+          </div>
+        </div>
+        <div class="summary-indicators">
+          <div class="summary-indicator">
+            <span class="indicator-dot success"></span>
+            <span id="success-count">0 Success</span>
+          </div>
+          <div class="summary-indicator">
+            <span class="indicator-dot info"></span>
+            <span id="info-count">0 Info</span>
+          </div>
+          <div class="summary-indicator">
+            <span class="indicator-dot warning"></span>
+            <span id="warning-count">0 Warning</span>
+          </div>
+          <div class="summary-indicator">
+            <span class="indicator-dot error"></span>
+            <span id="error-count">0 Error</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="category-breakdown">
+        <h2>Operations by Category</h2>
+        <div class="category-items" id="category-breakdown">
+          <div class="loading-spinner">Loading categories...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="operations-timeline">
+      <h2>Activity Timeline</h2>
+      <div class="timeline-filters">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="Backup">Backup</button>
+        <button class="filter-btn" data-filter="Data Fetch">Data Fetch</button>
+        <button class="filter-btn" data-filter="System">System</button>
+        <button class="filter-btn" data-filter="Monitoring">Monitoring</button>
+      </div>
+      <div class="timeline-list" id="operations-timeline">
+        <div class="loading-spinner">Loading operations...</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-content">
+      <div class="footer-brand">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 100'%3E%3Crect fill='%2386BC25' width='60' height='100'/%3E%3Ctext x='75' y='65' font-family='Arial,sans-serif' font-size='48' font-weight='bold' fill='white'%3EDeloitte%3C/text%3E%3C/svg%3E" alt="Deloitte">
+      </div>
+      <div class="footer-info">
+        <p>Wichita Dwight D. Eisenhower National Airport (ICT)</p>
+        <p>Real-time flight tracking and operational monitoring dashboard</p>
+        <p>© 2024 Deloitte. All rights reserved. This dashboard is for demonstration purposes.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const REFRESH_MS = 15000;
+    let currentFilter = 'all';
+    let allOperations = [];
+
+    async function fetchOperationsData() {
+      try {
+        const response = await fetch('/api/operations/today');
+        const data = await response.json();
+        
+        if (data && data.summary && data.operations) {
+          renderSummary(data.summary);
+          renderCategoryBreakdown(data.summary);
+          allOperations = data.operations;
+          renderTimeline(allOperations);
+          document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+        }
+      } catch (e) {
+        console.error('Error fetching operations:', e);
+      }
+    }
+
+    function renderSummary(summary) {
+      const totalOps = summary.total_operations || 0;
+      const successCount = summary.by_status?.success || 0;
+      const warningCount = summary.by_status?.warning || 0;
+      const errorCount = summary.by_status?.error || 0;
+      const infoCount = summary.by_status?.info || 0;
+      const successRate = totalOps > 0 ? Math.round((successCount / totalOps) * 100) : 0;
+
+      document.getElementById('total-ops').textContent = totalOps;
+      document.getElementById('success-rate').textContent = successRate + '%';
+      document.getElementById('success-count').textContent = successCount + ' Success';
+      document.getElementById('info-count').textContent = infoCount + ' Info';
+      document.getElementById('warning-count').textContent = warningCount + ' Warning';
+      document.getElementById('error-count').textContent = errorCount + ' Error';
+    }
+
+    function renderCategoryBreakdown(summary) {
+      const container = document.getElementById('category-breakdown');
+      const categories = summary.by_category || {};
+      
+      if (Object.keys(categories).length === 0) {
+        container.innerHTML = '<div class="no-operations">No operations logged yet</div>';
+        return;
+      }
+
+      const html = Object.entries(categories)
+        .sort((a, b) => b[1] - a[1])
+        .map(([category, count]) => `
+          <div class="category-item">
+            <span class="category-name">${category}</span>
+            <span class="category-count">${count}</span>
+          </div>
+        `).join('');
+      
+      container.innerHTML = html;
+    }
+
+    function renderTimeline(operations) {
+      const container = document.getElementById('operations-timeline');
+      
+      // Filter operations based on current filter
+      const filtered = currentFilter === 'all' 
+        ? operations 
+        : operations.filter(op => op.category === currentFilter);
+      
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="no-operations">No operations to display</div>';
+        return;
+      }
+
+      // Show most recent first
+      const sorted = [...filtered].reverse();
+      
+      const html = sorted.map(op => {
+        const categoryClass = `category-${op.category.toLowerCase().replace(/\s+/g, '-')}`;
+        const statusClass = op.status || 'info';
+        
+        return `
+          <div class="operation-item">
+            <div class="operation-header">
+              <span class="operation-time">${op.time || ''}</span>
+              <span class="operation-category ${categoryClass}">${op.category || 'General'}</span>
+            </div>
+            <div class="operation-text">
+              <span class="operation-status ${statusClass}"></span>
+              ${op.operation || 'Operation'}
+            </div>
+            ${op.details ? `<div class="operation-details">${op.details}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+      
+      container.innerHTML = html;
+    }
+
+    function setupFilters() {
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          // Update active state
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          
+          // Update filter and re-render
+          currentFilter = btn.getAttribute('data-filter');
+          renderTimeline(allOperations);
+        });
+      });
+    }
+
+    function startAutoRefresh() {
+      setInterval(() => {
+        fetchOperationsData();
+      }, REFRESH_MS);
+    }
+
+    window.addEventListener('load', () => {
+      setupFilters();
+      fetchOperationsData();
+      startAutoRefresh();
+    });
+  </script>
+</body>
+</html>

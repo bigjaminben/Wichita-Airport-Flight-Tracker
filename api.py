@@ -123,7 +123,8 @@ def ensure_fresh_data():
 def api_flights():
     ensure_fresh_data()
     with _cache_lock:
-        return make_response(_cache['flights_json'], 200, {'Content-Type': 'application/json'})
+        flights_data = json.loads(_cache['flights_json']) if _cache['flights_json'] else []
+        return jsonify(flights_data)
 
 
 @app.route('/api/flights/all')
@@ -228,7 +229,8 @@ def api_bts_stats():
 def api_weather():
     ensure_fresh_data()
     with _cache_lock:
-        return make_response(_cache['weather_json'], 200, {'Content-Type': 'application/json'})
+        weather_data = json.loads(_cache['weather_json']) if _cache['weather_json'] else {}
+        return jsonify(weather_data)
 
 
 def render_plot_from_method(method_name):
@@ -300,6 +302,47 @@ def index():
         return send_from_directory(static_dir, 'index.html')
     except Exception as e:
         return jsonify({'error': f'Could not serve index.html: {str(e)}'}), 500
+
+
+@app.route('/api/operations/today')
+def api_operations_today():
+    """Get today's operations log"""
+    try:
+        from operations_logger import operations_log
+        ops = operations_log.get_today_operations()
+        summary = operations_log.get_daily_summary()
+        return jsonify({
+            'operations': ops,
+            'summary': summary
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/operations/date/<date_str>')
+def api_operations_by_date(date_str):
+    """Get operations log for a specific date (YYYY-MM-DD)"""
+    try:
+        from operations_logger import operations_log
+        ops = operations_log.get_operations_by_date(date_str)
+        summary = operations_log.get_daily_summary(date_str)
+        return jsonify({
+            'operations': ops,
+            'summary': summary
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/operations/recent/<int:hours>')
+def api_operations_recent(hours):
+    """Get operations from the last N hours"""
+    try:
+        from operations_logger import operations_log
+        ops = operations_log.get_recent_operations(hours)
+        return jsonify({'operations': ops})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/plot/<name>')
