@@ -45,7 +45,7 @@ class HealthMonitor:
     def check_api_health(self) -> Dict:
         """Check if the API is responding"""
         try:
-            response = requests.get(f'{self.api_url}/api/flights', timeout=10)
+            response = requests.get(f'{self.api_url}/api/flights', timeout=5)
             
             if response.status_code == 200:
                 data = response.json()

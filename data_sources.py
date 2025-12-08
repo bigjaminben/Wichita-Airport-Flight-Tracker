@@ -1,6 +1,7 @@
 """
 Enhanced data sources for Airport Tracker
 Integrates multiple real-time and statistical data sources
+Uses HDF5 for hierarchical storage and Redis for real-time caching
 """
 
 import requests
@@ -9,17 +10,21 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 import json
 from flight_history import FlightHistoryDB
+from hdf5_storage import get_storage
+from redis_cache import get_cache
 
 logger = logging.getLogger(__name__)
 
 class FlightDataAggregator:
-    """Aggregates flight data from multiple sources"""
+    """Aggregates flight data from multiple sources with Redis caching"""
     
     def __init__(self):
-        self.cache_timeout = 15  # seconds
+        self.cache_timeout = 15  # seconds (Redis TTL is separate)
         self.last_fetch = {}
         self.cached_data = {}
-        self.history_db = FlightHistoryDB()  # Initialize history database
+        self.history_db = FlightHistoryDB()  # SQLite for legacy support
+        self.hdf5_storage = get_storage()  # HDF5 for hierarchical storage
+        self.redis_cache = get_cache()  # Redis for real-time caching
     
     @staticmethod
     def normalize_airport_code(text: str) -> str:
@@ -42,10 +47,60 @@ class FlightDataAggregator:
             return text
         
         return text  # Return as-is if can't parse
+    
+    @staticmethod
+    def _parse_flight_datetime(date_str: str, time_str: str) -> str:
+        """
+        Parse date and time strings into ISO 8601 datetime.
+        
+        Args:
+            date_str: Date string (e.g., 'Dec 08', 'Today', 'Tomorrow')
+            time_str: Time string (e.g., '05:38', '14:20')
+        
+        Returns:
+            ISO 8601 datetime string with timezone (e.g., '2025-12-08T05:38:00-06:00')
+        """
+        from datetime import datetime, timedelta
+        from dateutil import parser
+        import pytz
+        
+        if not time_str or time_str == 'N/A':
+            return 'N/A'
+        
+        try:
+            # Handle relative dates
+            today = datetime.now()
+            if date_str.lower() == 'today':
+                date_obj = today
+            elif date_str.lower() == 'tomorrow':
+                date_obj = today + timedelta(days=1)
+            elif date_str.lower() == 'yesterday':
+                date_obj = today - timedelta(days=1)
+            else:
+                # Parse date string (e.g., 'Dec 08')
+                date_obj = parser.parse(f"{date_str} {today.year}")
+                # If parsed date is more than 6 months in past, assume next year
+                if (today - date_obj).days > 180:
+                    date_obj = date_obj.replace(year=today.year + 1)
+            
+            # Parse time
+            time_obj = parser.parse(time_str).time()
+            
+            # Combine date and time
+            combined = datetime.combine(date_obj.date(), time_obj)
+            
+            # Add Central Time zone (ICT is in CST/CDT)
+            central = pytz.timezone('America/Chicago')
+            localized = central.localize(combined)
+            
+            return localized.isoformat()
+        except Exception as e:
+            logger.warning(f"Could not parse datetime '{date_str} {time_str}': {e}")
+            return 'N/A'
         
     def fetch_flightradar24_data(self, bounds: tuple = (34.0, 41.0, -102.0, -92.0)) -> List[Dict]:
         """
-        Fetch live flight data from Flightradar24
+        Fetch live flight data from Flightradar24 with Redis caching
         
         Args:
             bounds: (lat_min, lat_max, lon_min, lon_max) - Expanded to ~400 mile radius 
@@ -55,6 +110,14 @@ class FlightDataAggregator:
             List of flight dictionaries filtered to ICT arrivals/departures
         """
         cache_key = 'flightradar24'
+        
+        # Try Redis cache first
+        cached = self.redis_cache.get(cache_key)
+        if cached:
+            logger.info(f"Using Redis cached data for {cache_key}")
+            return cached
+        
+        # Fall back to memory cache
         if self._is_cached(cache_key):
             return self.cached_data[cache_key]
         
@@ -141,8 +204,11 @@ class FlightDataAggregator:
                     flights.append(flight)
             
             logger.info(f"Fetched {len(flights)} ICT-bound flights from Flightradar24 (expanded search area)")
+            
+            # Cache in both memory and Redis
             self.cached_data[cache_key] = flights
             self.last_fetch[cache_key] = datetime.now()
+            self.redis_cache.set(cache_key, flights, ttl=15)
             
             # Log operation
             try:
@@ -201,17 +267,22 @@ class FlightDataAggregator:
                             flight_num = cols[0].get_text(strip=True)
                             origin = cols[1].get_text(strip=True)
                             airline = cols[2].get_text(strip=True)
+                            date_str = cols[3].get_text(strip=True)
                             scheduled = cols[4].get_text(strip=True)
                             actual = cols[5].get_text(strip=True)
                             status = cols[6].get_text(strip=True)
+                            
+                            # Convert to full ISO 8601 datetime
+                            scheduled_dt = self._parse_flight_datetime(date_str, scheduled)
+                            actual_dt = self._parse_flight_datetime(date_str, actual) if actual else scheduled_dt
                             
                             if flight_num and origin:  # Only add if we have minimal data
                                 arrivals.append({
                                     'Flight_Number': flight_num,
                                     'Airline': airline or 'Unknown',
                                     'Origin': self.normalize_airport_code(origin),
-                                    'Scheduled_Time': scheduled or 'N/A',
-                                    'Actual_Time': actual or scheduled,
+                                    'Scheduled_Time': scheduled_dt,
+                                    'Actual_Time': actual_dt,
                                     'Status': status or 'Unknown',
                                     'Type': 'Arrival',
                                     'Destination': airport_code,
@@ -236,17 +307,22 @@ class FlightDataAggregator:
                             flight_num = cols[0].get_text(strip=True)
                             destination = cols[1].get_text(strip=True)
                             airline = cols[2].get_text(strip=True)
+                            date_str = cols[3].get_text(strip=True)
                             scheduled = cols[4].get_text(strip=True)
                             actual = cols[5].get_text(strip=True)
                             status = cols[6].get_text(strip=True)
+                            
+                            # Convert to full ISO 8601 datetime
+                            scheduled_dt = self._parse_flight_datetime(date_str, scheduled)
+                            actual_dt = self._parse_flight_datetime(date_str, actual) if actual else scheduled_dt
                             
                             if flight_num and destination:
                                 departures.append({
                                     'Flight_Number': flight_num,
                                     'Airline': airline or 'Unknown',
                                     'Destination': self.normalize_airport_code(destination),
-                                    'Scheduled_Time': scheduled or 'N/A',
-                                    'Actual_Time': actual or scheduled,
+                                    'Scheduled_Time': scheduled_dt,
+                                    'Actual_Time': actual_dt,
                                     'Status': status or 'Unknown',
                                     'Type': 'Departure',
                                     'Origin': airport_code,
@@ -258,8 +334,10 @@ class FlightDataAggregator:
             result = {'arrivals': arrivals, 'departures': departures}
             logger.info(f"Fetched {len(arrivals)} arrivals, {len(departures)} departures from Airportia")
             
+            # Cache in both memory and Redis
             self.cached_data[cache_key] = result
             self.last_fetch[cache_key] = datetime.now()
+            self.redis_cache.set(cache_key, result, ttl=15)
             return result
             
         except Exception as e:
@@ -338,9 +416,43 @@ class FlightDataAggregator:
                 seen.add(fnum)
                 unique_flights.append(flight)
         
-        # Save all flights to history database
+        # Save all flights to both SQLite (legacy) and HDF5 (hierarchical)
         if unique_flights:
+            # Attach weather snapshots to each flight
+            for flight in unique_flights:
+                # Get weather for the relevant airport (origin for departures, destination for arrivals)
+                if flight.get('Type') == 'Arrival':
+                    airport = 'ICT'  # Weather at destination
+                else:
+                    airport = flight.get('Origin', 'ICT')  # Weather at origin
+                
+                weather = self.get_weather_snapshot(airport)
+                flight['weather_snapshot'] = weather
+            
             self.history_db.save_flights_batch(unique_flights)
+            
+            # Save to HDF5 with hierarchical structure
+            for flight in unique_flights:
+                flight_type = 'arrivals' if flight.get('Type') == 'Arrival' else 'departures'
+                
+                # Prepare HDF5 flight data
+                hdf5_flight = {
+                    'flight_number': flight.get('Flight_Number', ''),
+                    'airline': flight.get('Airline', ''),
+                    'origin': flight.get('Origin', ''),
+                    'destination': flight.get('Destination', ''),
+                    'scheduled_time': flight.get('Scheduled_Time', ''),
+                    'actual_time': flight.get('Actual_Time'),
+                    'estimated_time': flight.get('Estimated'),
+                    'status': flight.get('Status', ''),
+                    'gate': flight.get('Gate'),
+                    'terminal': flight.get('Terminal'),
+                    'aircraft': flight.get('Aircraft_Type'),
+                    'registration': flight.get('registration', ''),
+                    'weather_snapshot': flight.get('weather_snapshot', {})
+                }
+                
+                self.hdf5_storage.add_flight(hdf5_flight, flight_type)
         
         logger.info(f"Aggregated {len(unique_flights)} unique flights from all sources")
         
@@ -358,15 +470,43 @@ class FlightDataAggregator:
     def get_todays_history(self) -> Dict[str, List[Dict]]:
         """
         Get all flights detected today from history database
+        Uses HDF5 hierarchical storage for better performance
         
         Returns:
             Dict with 'arrivals' and 'departures' lists from today's history
         """
+        # Try HDF5 first (faster, hierarchical)
+        try:
+            arrivals = self.hdf5_storage.get_flights('arrivals', days=1)
+            departures = self.hdf5_storage.get_flights('departures', days=1)
+            
+            if arrivals or departures:
+                return {
+                    'arrivals': arrivals,
+                    'departures': departures
+                }
+        except Exception as e:
+            logger.warning(f"HDF5 retrieval failed, falling back to SQLite: {e}")
+        
+        # Fallback to SQLite
         return self.history_db.get_todays_flights()
     
     def get_history_stats(self) -> Dict:
-        """Get statistics about today's flight history"""
-        return self.history_db.get_flight_stats()
+        """Get statistics about flight history from HDF5"""
+        try:
+            hdf5_stats = self.hdf5_storage.get_statistics()
+            
+            # Merge with SQLite stats for comparison
+            sqlite_stats = self.history_db.get_flight_stats()
+            
+            return {
+                'hdf5': hdf5_stats,
+                'sqlite': sqlite_stats,
+                'primary_storage': 'HDF5'
+            }
+        except Exception as e:
+            logger.error(f"Error getting HDF5 stats: {e}")
+            return self.history_db.get_flight_stats()
     
     def _is_cached(self, key: str) -> bool:
         """Check if cached data is still valid"""
@@ -375,6 +515,70 @@ class FlightDataAggregator:
         
         age = (datetime.now() - self.last_fetch[key]).total_seconds()
         return age < self.cache_timeout
+    
+    def get_weather_snapshot(self, airport_code: str) -> Dict:
+        """
+        Get current weather for a specific airport for flight record
+        
+        Args:
+            airport_code: 3-letter IATA code (e.g., 'ICT', 'DFW')
+        
+        Returns:
+            Weather data dict with temperature, wind, precipitation, etc.
+        """
+        # Airport coordinates
+        airports = {
+            'ICT': {'lat': 37.75, 'lon': -97.37},
+            'DFW': {'lat': 32.90, 'lon': -97.04},
+            'DEN': {'lat': 39.86, 'lon': -104.67},
+            'ATL': {'lat': 33.64, 'lon': -84.43},
+            'PHX': {'lat': 33.43, 'lon': -112.01},
+            'ORD': {'lat': 41.98, 'lon': -87.90},
+            'IAH': {'lat': 29.98, 'lon': -95.34},
+            'MSP': {'lat': 44.88, 'lon': -93.22},
+        }
+        
+        if airport_code not in airports:
+            return {}
+        
+        try:
+            info = airports[airport_code]
+            url = (
+                f"https://api.open-meteo.com/v1/forecast"
+                f"?latitude={info['lat']}&longitude={info['lon']}"
+                f"&current=temperature_2m,relative_humidity_2m,weathercode,windspeed_10m,visibility,precipitation,precipitation_probability"
+                f"&temperature_unit=fahrenheit&windspeed_unit=mph&precipitation_unit=inch&timezone=auto"
+            )
+            r = requests.get(url, timeout=10)
+            r.raise_for_status()
+            data = r.json()
+            
+            if 'current' in data:
+                current = data['current']
+                weather_code = current.get('weathercode', 0)
+                conditions = {
+                    0: 'Clear', 1: 'Mainly Clear', 2: 'Partly Cloudy', 3: 'Overcast',
+                    45: 'Foggy', 48: 'Foggy', 51: 'Light Drizzle', 53: 'Drizzle', 55: 'Heavy Drizzle',
+                    61: 'Light Rain', 63: 'Rain', 65: 'Heavy Rain', 71: 'Light Snow', 73: 'Snow', 75: 'Heavy Snow',
+                    80: 'Light Showers', 81: 'Showers', 82: 'Heavy Showers', 95: 'Thunderstorm'
+                }
+                
+                visibility_m = current.get('visibility', 10000)
+                visibility_miles = round(visibility_m * 0.000621371, 1)
+                
+                return {
+                    'Temperature_F': int(current.get('temperature_2m', 70)),
+                    'Condition': conditions.get(weather_code, 'Unknown'),
+                    'Wind_Speed_mph': int(current.get('windspeed_10m', 0)),
+                    'Visibility_miles': visibility_miles,
+                    'Humidity_percent': int(current.get('relative_humidity_2m', 50)),
+                    'Precipitation_inches': round(current.get('precipitation', 0.0), 2),
+                    'Precipitation_probability': int(current.get('precipitation_probability', 0))
+                }
+        except Exception as e:
+            logger.warning(f"Could not fetch weather for {airport_code}: {e}")
+        
+        return {}
 
 
 class AirportStatistics:

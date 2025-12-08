@@ -36,24 +36,38 @@ class FlightHistoryDB:
                     actual_time TEXT,
                     status TEXT,
                     aircraft_type TEXT,
+                    aircraft_registration TEXT,
                     altitude INTEGER,
                     ground_speed INTEGER,
                     source TEXT,
+                    temperature REAL,
+                    wind_speed REAL,
+                    visibility REAL,
+                    precipitation REAL,
+                    humidity INTEGER,
+                    weather_condition TEXT,
+                    inbound_flight_number TEXT,
+                    inbound_delay_minutes INTEGER,
                     first_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(flight_number, scheduled_time, flight_type)
                 )
             ''')
             
-            # Create index for faster queries
+            # Create indices for faster queries - optimized
             cursor.execute('''
-                CREATE INDEX IF NOT EXISTS idx_flight_date 
-                ON flights(flight_number, scheduled_time)
+                CREATE INDEX IF NOT EXISTS idx_flight_lookup 
+                ON flights(flight_number, scheduled_time, flight_type)
             ''')
             
             cursor.execute('''
                 CREATE INDEX IF NOT EXISTS idx_first_seen 
-                ON flights(first_seen)
+                ON flights(first_seen DESC)
+            ''')
+            
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_status
+                ON flights(status)
             ''')
             
             conn.commit()
@@ -79,17 +93,33 @@ class FlightHistoryDB:
             actual_time = flight.get('Actual_Time', flight.get('actual_time', ''))
             status = flight.get('Status', 'Unknown')
             aircraft_type = flight.get('aircraft_type', '')
+            aircraft_registration = flight.get('registration', flight.get('aircraft_registration', ''))
             altitude = flight.get('altitude', 0)
             ground_speed = flight.get('ground_speed', 0)
             source = flight.get('source', 'Unknown')
+            
+            # Extract weather snapshot (if provided)
+            weather = flight.get('weather_snapshot', {})
+            temperature = weather.get('Temperature_F', None)
+            wind_speed = weather.get('Wind_Speed_mph', None)
+            visibility = weather.get('Visibility_miles', None)
+            precipitation = weather.get('Precipitation_inches', None)
+            humidity = weather.get('Humidity_percent', None)
+            weather_condition = weather.get('Condition', None)
+            
+            # Extract inbound flight info (for cascading delays)
+            inbound_flight = flight.get('inbound_flight_number', None)
+            inbound_delay = flight.get('inbound_delay_minutes', None)
             
             # Insert or update
             cursor.execute('''
                 INSERT INTO flights (
                     flight_number, airline, origin, destination, flight_type,
-                    scheduled_time, actual_time, status, aircraft_type,
-                    altitude, ground_speed, source
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    scheduled_time, actual_time, status, aircraft_type, aircraft_registration,
+                    altitude, ground_speed, source,
+                    temperature, wind_speed, visibility, precipitation, humidity, weather_condition,
+                    inbound_flight_number, inbound_delay_minutes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(flight_number, scheduled_time, flight_type) 
                 DO UPDATE SET
                     status = excluded.status,

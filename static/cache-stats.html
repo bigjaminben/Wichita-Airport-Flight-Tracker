@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cache Statistics | Wichita Airport Flight Tracker</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <style>
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-box {
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+      border: 1px solid #86bc25;
+      border-radius: 8px;
+      padding: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .stat-box:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(134, 188, 37, 0.3);
+    }
+
+    .stat-box-header {
+      color: #86bc25;
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-box-value {
+      color: white;
+      font-size: 36px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .stat-box-label {
+      color: #888;
+      font-size: 13px;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+      animation: pulse 2s infinite;
+    }
+
+    .status-indicator.active {
+      background-color: #86bc25;
+      box-shadow: 0 0 10px rgba(134, 188, 37, 0.5);
+    }
+
+    .status-indicator.inactive {
+      background-color: #ff4444;
+      box-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .cache-status-banner {
+      background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+      border: 2px solid #86bc25;
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .cache-status-banner h2 {
+      margin: 0 0 10px 0;
+      color: white;
+      font-size: 24px;
+    }
+
+    .cache-status-banner p {
+      margin: 0;
+      color: #888;
+      font-size: 14px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+      justify-content: center;
+    }
+
+    .action-button {
+      background: linear-gradient(135deg, #86bc25 0%, #6b9920 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .action-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(134, 188, 37, 0.4);
+    }
+
+    .action-button.danger {
+      background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+    }
+
+    .action-button.danger:hover {
+      box-shadow: 0 5px 15px rgba(255, 68, 68, 0.4);
+    }
+
+    .performance-chart {
+      background: #1a1a1a;
+      border: 1px solid #86bc25;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .performance-chart h3 {
+      margin: 0 0 15px 0;
+      color: #86bc25;
+      font-size: 18px;
+    }
+
+    .performance-bar {
+      background: #2d2d2d;
+      border-radius: 10px;
+      height: 30px;
+      margin-bottom: 15px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .performance-bar-fill {
+      background: linear-gradient(90deg, #86bc25 0%, #6b9920 100%);
+      height: 100%;
+      border-radius: 10px;
+      transition: width 0.5s ease;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 10px;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .performance-label {
+      color: #888;
+      font-size: 13px;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-particles">
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+    </div>
+    <div class="header-content">
+      <div>
+        <h1>Cache Statistics Dashboard</h1>
+        <p class="subtitle">Redis Real-Time Caching Performance Metrics</p>
+      </div>
+      <div class="header-right">
+        <a href="/static/index.html" class="operations-button" style="padding: 8px 16px; font-size: 14px;">← Back to Dashboard</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div style="max-width: 1400px; margin: 0 auto; padding: 30px;">
+      
+      <!-- Cache Status Banner -->
+      <div class="cache-status-banner">
+        <h2>
+          <span class="status-indicator" id="cache-status-indicator"></span>
+          <span id="cache-status-text">Loading...</span>
+        </h2>
+        <p id="cache-status-subtitle">Checking cache connection...</p>
+        <div class="action-buttons">
+          <button class="action-button" onclick="refreshStats()">🔄 Refresh Stats</button>
+          <button class="action-button danger" onclick="clearCache()">🗑️ Clear Cache</button>
+        </div>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-box-header">Cache Hit Rate</div>
+          <div class="stat-box-value" id="hit-rate">--</div>
+          <div class="stat-box-label">Percentage of requests served from cache</div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-box-header">Total Cache Hits</div>
+          <div class="stat-box-value" id="cache-hits">--</div>
+          <div class="stat-box-label">Successful cache retrievals</div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-box-header">Cache Misses</div>
+          <div class="stat-box-value" id="cache-misses">--</div>
+          <div class="stat-box-label">Requests requiring fresh data</div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-box-header">Memory Usage</div>
+          <div class="stat-box-value" id="memory-usage">-- MB</div>
+          <div class="stat-box-label">Current Redis memory consumption</div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-box-header">Total Keys</div>
+          <div class="stat-box-value" id="total-keys">--</div>
+          <div class="stat-box-label">Cached items in database</div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-box-header">Connected Clients</div>
+          <div class="stat-box-value" id="connected-clients">--</div>
+          <div class="stat-box-label">Active Redis connections</div>
+        </div>
+      </div>
+
+      <!-- Performance Chart -->
+      <div class="performance-chart">
+        <h3>Cache Performance Metrics</h3>
+        
+        <div class="performance-label">Hit Rate Performance</div>
+        <div class="performance-bar">
+          <div class="performance-bar-fill" id="hit-rate-bar" style="width: 0%">0%</div>
+        </div>
+
+        <div class="performance-label">Memory Utilization (MB)</div>
+        <div class="performance-bar">
+          <div class="performance-bar-fill" id="memory-bar" style="width: 0%">0 MB</div>
+        </div>
+
+        <div class="performance-label">Cache Efficiency (Hits vs Total Requests)</div>
+        <div class="performance-bar">
+          <div class="performance-bar-fill" id="efficiency-bar" style="width: 0%">0%</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let autoRefreshInterval;
+
+    async function refreshStats() {
+      try {
+        const response = await fetch('/api/cache/stats');
+        const data = await response.json();
+
+        if (data.enabled) {
+          // Update status indicator
+          document.getElementById('cache-status-indicator').className = 'status-indicator active';
+          document.getElementById('cache-status-text').textContent = 'Redis Cache Active';
+          document.getElementById('cache-status-subtitle').textContent = 'Real-time caching operational with 20-second TTL';
+
+          // Update stats
+          document.getElementById('hit-rate').textContent = data.hit_rate || '0%';
+          document.getElementById('cache-hits').textContent = (data.hits || 0).toLocaleString();
+          document.getElementById('cache-misses').textContent = (data.misses || 0).toLocaleString();
+          document.getElementById('memory-usage').textContent = `${data.used_memory_mb || 0} MB`;
+          document.getElementById('total-keys').textContent = (data.total_keys || 0).toLocaleString();
+          document.getElementById('connected-clients').textContent = data.connected_clients || 0;
+
+          // Update performance bars
+          const hitRateNum = parseFloat(data.hit_rate) || 0;
+          document.getElementById('hit-rate-bar').style.width = `${hitRateNum}%`;
+          document.getElementById('hit-rate-bar').textContent = data.hit_rate || '0%';
+
+          const memoryMB = data.used_memory_mb || 0;
+          const memoryPercent = Math.min((memoryMB / 100) * 100, 100); // Assuming 100MB max for visualization
+          document.getElementById('memory-bar').style.width = `${memoryPercent}%`;
+          document.getElementById('memory-bar').textContent = `${memoryMB} MB`;
+
+          const totalRequests = (data.hits || 0) + (data.misses || 0);
+          const efficiency = totalRequests > 0 ? ((data.hits || 0) / totalRequests * 100).toFixed(1) : 0;
+          document.getElementById('efficiency-bar').style.width = `${efficiency}%`;
+          document.getElementById('efficiency-bar').textContent = `${efficiency}%`;
+
+        } else {
+          // Cache disabled
+          document.getElementById('cache-status-indicator').className = 'status-indicator inactive';
+          document.getElementById('cache-status-text').textContent = 'Redis Cache Unavailable';
+          document.getElementById('cache-status-subtitle').textContent = data.error || 'Using in-memory cache fallback';
+
+          // Set all values to N/A
+          document.getElementById('hit-rate').textContent = 'N/A';
+          document.getElementById('cache-hits').textContent = 'N/A';
+          document.getElementById('cache-misses').textContent = 'N/A';
+          document.getElementById('memory-usage').textContent = 'N/A';
+          document.getElementById('total-keys').textContent = 'N/A';
+          document.getElementById('connected-clients').textContent = 'N/A';
+        }
+      } catch (error) {
+        console.error('Error fetching cache stats:', error);
+        document.getElementById('cache-status-indicator').className = 'status-indicator inactive';
+        document.getElementById('cache-status-text').textContent = 'Error Loading Stats';
+        document.getElementById('cache-status-subtitle').textContent = error.message;
+      }
+    }
+
+    async function clearCache() {
+      if (!confirm('Are you sure you want to clear all cached data? This will force fresh data fetches for all requests.')) {
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/cache/clear', { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.cleared !== undefined) {
+          alert(`Cache cleared successfully! ${data.cleared} keys removed.`);
+          refreshStats();
+        } else {
+          alert('Error clearing cache: ' + (data.error || 'Unknown error'));
+        }
+      } catch (error) {
+        alert('Error clearing cache: ' + error.message);
+      }
+    }
+
+    // Auto-refresh every 5 seconds
+    function startAutoRefresh() {
+      refreshStats();
+      autoRefreshInterval = setInterval(refreshStats, 5000);
+    }
+
+    // Stop auto-refresh when leaving page
+    window.addEventListener('beforeunload', () => {
+      if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+      }
+    });
+
+    // Start on load
+    startAutoRefresh();
+  </script>
+</body>
+</html>

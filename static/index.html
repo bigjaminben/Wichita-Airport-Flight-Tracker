@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Wichita Airport Flight Tracker | Deloitte</title>
   <link rel="stylesheet" href="/static/styles.css">
-  <!-- Plotly CDN for interactive charts -->
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <!-- Plotly CDN for interactive charts - defer loading -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js" defer></script>
 </head>
 <body>
   <header>
@@ -89,6 +89,18 @@
       <div class="sidebar-section">
         <a href="/static/operations.html" class="operations-button">
           Activity and System Log
+        </a>
+      </div>
+
+      <div class="sidebar-section">
+        <a href="/static/cache-stats.html" class="operations-button">
+          Cache Statistics
+        </a>
+      </div>
+
+      <div class="sidebar-section">
+        <a href="/static/ml-info.html" class="operations-button">
+          Machine Learning Info
         </a>
       </div>
     </aside>

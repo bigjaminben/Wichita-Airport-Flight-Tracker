@@ -1,24 +1,57 @@
 const REFRESH_MS = 15000;
+let isRefreshing = false;
+let chartsInitialized = false;
+let lastFlightData = null;
+let chartUpdateQueue = [];
+const performanceMetrics = { fetchTime: 0, renderTime: 0 };
+const requestCache = new Map();
+const CACHE_DURATION = 10000; // Cache API responses for 10 seconds
+
+async function fetchWithCache(url) {
+  const now = Date.now();
+  const cached = requestCache.get(url);
+  
+  if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+    return cached.data;
+  }
+  
+  const response = await fetch(url);
+  const data = await response.json();
+  requestCache.set(url, { data, timestamp: now });
+  return data;
+}
 
 async function fetchData() {
-  console.log('fetchData() called at', new Date().toLocaleTimeString());
+  if (isRefreshing) return;
+  isRefreshing = true;
+  
+  const startTime = performance.now();
+  
   try {
-    // Fetch aggregated data, weather, history, and operations log
-    const [flightsAllRes, weatherRes, historyRes, opsRes] = await Promise.all([
-      fetch('/api/flights/all'),
-      fetch('/api/weather'),
-      fetch('/api/flights/history'),
-      fetch('/api/operations/today')
+    // Fetch only essential data in parallel, use cache for others
+    const [flightsAllRes, weatherRes, predictionsRes] = await Promise.all([
+      fetchWithCache('/api/flights/all'),
+      fetchWithCache('/api/weather'),
+      fetchWithCache('/api/predictions/all')
     ]);
     
-    const flightsAll = await flightsAllRes.json();
-    const weather = await weatherRes.json();
-    const history = await historyRes.json();
-    const operations = await opsRes.json();
+    // Fetch less critical data separately to avoid blocking
+    const historyPromise = fetchWithCache('/api/flights/history');
+    const opsPromise = fetchWithCache('/api/operations/today');
+    
+    const flightsAll = flightsAllRes;
+    const weather = weatherRes;
+    const predictionsData = predictionsRes;
 
-    // Extract flights array (includes Flightradar24 + Airportia aggregated)
+    // Extract flights array and predictions
     const flights = flightsAll.flights || [];
-    console.log('Flights loaded:', flights.length);
+    const predictions = predictionsData.predictions || [];
+    
+    // Create prediction lookup map
+    const predictionMap = {};
+    predictions.forEach(p => {
+      predictionMap[p.flight_number] = p.prediction;
+    });
     
     // Properly separate arrivals and departures - strict filtering
     const arrivals = flights.filter(f => f.Type === 'Arrival' && f.Destination === 'ICT');
@@ -35,11 +68,12 @@ async function fetchData() {
     if (flightCount) flightCount.textContent = arrivals.length + departures.length;
     
     // Display arrivals and departures in formatted cards (now includes live arriving aircraft)
-    renderFlightList('arrivals-list', arrivals, 'arrival');
-    renderFlightList('departures-list', departures, 'departure');
+    renderFlightList('arrivals-list', arrivals, 'arrival', predictionMap);
+    renderFlightList('departures-list', departures, 'departure', predictionMap);
     
-    // Display historical status breakdown
-    renderHistoryStats(history);
+    // Load less critical data asynchronously
+    historyPromise.then(history => renderHistoryStats(history));
+    opsPromise.then(operations => renderOperationsLog(operations));
     
     // Calculate route rankings for weather sorting
     const routeRankings = calculateRouteRankings(flights);
@@ -50,29 +84,34 @@ async function fetchData() {
     // Render weather cards (sorted by route importance)
     renderWeatherCards(weather, routeRankings);
     
-    // Render operations log
-    renderOperationsLog(operations);
-    
     const lastUpdated = document.getElementById('last-updated');
     if (lastUpdated) lastUpdated.textContent = new Date().toLocaleTimeString();
     updateCurrentTime();
 
-    // Build interactive charts using Plotly
-    try { buildStatusChart(flights); } catch (e) { console.error('Status chart error:', e); }
-    try { buildHourlyChart(flights); } catch (e) { console.error('Hourly chart error:', e); }
-    try { buildAirlineChart(flights); } catch (e) { console.error('Airline chart error:', e); }
-    try { buildMapChart(flights); } catch (e) { console.error('Map chart error:', e); }
+    // Only build charts on first load or if data significantly changed
+    const shouldRebuildCharts = !chartsInitialized || hasSignificantChange(flights, lastFlightData);
+    if (shouldRebuildCharts) {
+      requestAnimationFrame(() => {
+        buildStatusChart(flights);
+        buildHourlyChart(flights);
+        buildAirlineChart(flights);
+        buildMapChart(flights);
+        chartsInitialized = true;
+      });
+    }
+    lastFlightData = flights;
   } catch (e) {
-    console.error('Error fetching data:', e);
-    const errorMsg = `<div class="error-state">Error fetching flights: ${e.message}</div>`;
+    const errorMsg = `<div class="error-state">Unable to load flight data</div>`;
     const arrivalsList = document.getElementById('arrivals-list');
     const departuresList = document.getElementById('departures-list');
     if (arrivalsList) arrivalsList.innerHTML = errorMsg;
     if (departuresList) departuresList.innerHTML = errorMsg;
+  } finally {
+    isRefreshing = false;
   }
 }
 
-function renderFlightList(elementId, flights, type) {
+function renderFlightList(elementId, flights, type, predictionMap = {}) {
   const container = document.getElementById(elementId);
   if (!container) return;
   
@@ -83,6 +122,10 @@ function renderFlightList(elementId, flights, type) {
   
   const maxFlights = type === 'radar' ? 15 : 10;
   const flightsToShow = flights.slice(0, maxFlights);
+  
+  // Use document fragment for better performance
+  const fragment = document.createDocumentFragment();
+  const tempDiv = document.createElement('div');
   
   const html = flightsToShow.map(flight => {
     const statusClass = getStatusClass(flight.Status);
@@ -97,6 +140,44 @@ function renderFlightList(elementId, flights, type) {
     }
     if (displayStatus.toLowerCase().includes('track >') || displayStatus === 'Track >') {
       displayStatus = 'Departing';
+    }
+    
+    // Get delay prediction
+    const prediction = predictionMap[flight.Flight_Number];
+    let delayRiskBadge = '';
+    if (prediction) {
+      const riskLevel = prediction.risk_level;
+      const riskScore = prediction.risk_score;
+      const confidence = prediction.confidence;
+      const factors = prediction.factors || [];
+      
+      let riskColor = '#86BC25';  // Deloitte green (low)
+      let riskIcon = '🟢';
+      if (riskLevel === 'High') {
+        riskColor = '#ED1C24';  // Red
+        riskIcon = '🔴';
+      } else if (riskLevel === 'Medium') {
+        riskColor = '#FF6900';  // Orange
+        riskIcon = '🟡';
+      }
+      
+      const factorsList = factors.length > 0 ? factors.map(f => `<li>${f}</li>`).join('') : '<li>No specific factors</li>';
+      
+      delayRiskBadge = `
+        <div class="delay-risk-badge risk-${riskLevel.toLowerCase()}" style="background-color: ${riskColor}15; border-left: 3px solid ${riskColor};">
+          <div class="risk-header">
+            <span class="risk-icon">${riskIcon}</span>
+            <span class="risk-level">${riskLevel} Delay Risk</span>
+            <span class="risk-score">${riskScore}%</span>
+          </div>
+          <div class="risk-details">
+            <div class="risk-confidence">Confidence: ${confidence}%</div>
+            <div class="risk-factors">
+              <strong>Factors:</strong>
+              <ul>${factorsList}</ul>
+            </div>
+          </div>
+        </div>`;
     }
     
     // Calculate transit time metrics
@@ -149,6 +230,7 @@ function renderFlightList(elementId, flights, type) {
           <span class="flight-number">${flight.Flight_Number}</span>
           <span class="flight-status status-${statusClass}">${displayStatus}</span>
         </div>
+        ${delayRiskBadge}
         <div class="flight-details">
           <div class="detail-row">
             <span class="label">Airline:</span>
@@ -179,7 +261,10 @@ function renderFlightList(elementId, flights, type) {
     `;
   }).join('');
   
-  container.innerHTML = html;
+  // Use faster DOM update
+  tempDiv.innerHTML = html;
+  container.innerHTML = '';
+  container.appendChild(tempDiv);
 }
 
 function getStatusClass(status) {
@@ -443,7 +528,6 @@ function renderWeatherCards(weather, routeRankings = []) {
 }
 
 function buildStatusChart(flights) {
-  console.log('buildStatusChart called with', flights.length, 'flights');
   if (!document.getElementById('chart-status')) return;
   const counts = {};
   flights.forEach(f => {
@@ -459,7 +543,6 @@ function buildStatusChart(flights) {
   });
   const labels = Object.keys(counts);
   const values = labels.map(l => counts[l]);
-  console.log('Status chart data:', { labels, values });
   const data = [{ type: 'pie', labels, values, hole: 0.3 }];
   const layout = { title: 'Flight Status Distribution', margin: { t: 40 } };
   layout.images = [{
@@ -468,9 +551,12 @@ function buildStatusChart(flights) {
     x: 1, y: 0, xanchor: 'right', yanchor: 'bottom',
     sizex: 0.15, sizey: 0.15, opacity: 0.85
   }];
-  console.log('Calling Plotly.newPlot for chart-status');
-  Plotly.newPlot('chart-status', data, layout, {responsive: true, displayModeBar: false});
-  console.log('Status chart rendered');
+  const chartDiv = document.getElementById('chart-status');
+  if (chartDiv.data) {
+    Plotly.react('chart-status', data, layout, {responsive: true, displayModeBar: false});
+  } else {
+    Plotly.newPlot('chart-status', data, layout, {responsive: true, displayModeBar: false});
+  }
 }
 
 function buildHourlyChart(flights) {
@@ -543,7 +629,12 @@ function buildHourlyChart(flights) {
     height: 400
   };
   layout.images = [{ source: '/static/logo.png', xref: 'paper', yref: 'paper', x: 1, y: 0, xanchor: 'right', yanchor: 'bottom', sizex: 0.15, sizey: 0.15, opacity: 0.85 }];
-  Plotly.newPlot('chart-hourly', data, layout, {responsive: true, displayModeBar: false});
+  const chartDiv = document.getElementById('chart-hourly');
+  if (chartDiv.data) {
+    Plotly.react('chart-hourly', data, layout, {responsive: true, displayModeBar: false});
+  } else {
+    Plotly.newPlot('chart-hourly', data, layout, {responsive: true, displayModeBar: false});
+  }
 }
 
 function buildAirlineChart(flights) {
@@ -570,7 +661,12 @@ function buildAirlineChart(flights) {
   const data = [{ x: sortedNames, y: vals, type: 'bar', marker: {color: '#2ecc71'}, text: vals.map(v => v.toFixed(1) + '%'), textposition: 'outside' }];
   const layout = { title: 'On-Time % by Airline (top 10)', margin: { t: 40 }, yaxis: { title: '%', range: [0, 105] } };
   layout.images = [{ source: '/static/logo.png', xref: 'paper', yref: 'paper', x: 1, y: 0, xanchor: 'right', yanchor: 'bottom', sizex: 0.15, sizey: 0.15, opacity: 0.85 }];
-  Plotly.newPlot('chart-airline', data, layout, {responsive: true, displayModeBar: false});
+  const chartDiv = document.getElementById('chart-airline');
+  if (chartDiv.data) {
+    Plotly.react('chart-airline', data, layout, {responsive: true, displayModeBar: false});
+  } else {
+    Plotly.newPlot('chart-airline', data, layout, {responsive: true, displayModeBar: false});
+  }
 }
 
 function buildMapChart(flights) {
@@ -702,10 +798,46 @@ function updateCurrentTime() {
   if (currentTimeEl) currentTimeEl.textContent = now.toLocaleTimeString();
 }
 
+function hasSignificantChange(newFlights, oldFlights) {
+  if (!oldFlights) return true;
+  if (newFlights.length !== oldFlights.length) return true;
+  
+  // Check if flight statuses changed significantly (more than 2 flights)
+  let statusChanges = 0;
+  const oldMap = new Map(oldFlights.map(f => [f.Flight_Number, f.Status]));
+  
+  for (const flight of newFlights) {
+    const oldStatus = oldMap.get(flight.Flight_Number);
+    if (oldStatus !== flight.Status) {
+      statusChanges++;
+      if (statusChanges > 2) return true;
+    }
+  }
+  
+  return false;
+}
+
 function startAutoRefresh() {
-  setInterval(() => {
+  let refreshInterval;
+  
+  function scheduleRefresh() {
+    // Only refresh if page is visible
+    if (document.hidden) {
+      return;
+    }
     fetchData();
-  }, REFRESH_MS);
+  }
+  
+  // Start regular refresh
+  refreshInterval = setInterval(scheduleRefresh, REFRESH_MS);
+  
+  // Pause/resume on visibility change
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      // Tab became visible - refresh immediately
+      fetchData();
+    }
+  });
 }
 
 function startClock() {

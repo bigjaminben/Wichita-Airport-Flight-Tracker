@@ -1,6 +1,7 @@
 """
 Automated Database Backup System
-Handles scheduled backups, retention policies, and archival for flight_history.db
+Handles scheduled backups, retention policies, and archival for flight databases
+Supports both SQLite and HDF5 hierarchical data formats
 """
 import sqlite3
 import shutil
@@ -27,8 +28,9 @@ logger = logging.getLogger('BackupManager')
 
 
 class BackupManager:
-    def __init__(self, db_path='flight_history.db'):
+    def __init__(self, db_path='flight_history.db', hdf5_path='flight_history.h5'):
         self.db_path = Path(db_path)
+        self.hdf5_path = Path(hdf5_path)
         self.backup_dir = Path(__file__).parent / 'backups'
         self.archive_dir = self.backup_dir / 'archive'
         
@@ -36,31 +38,67 @@ class BackupManager:
         self.backup_dir.mkdir(exist_ok=True)
         self.archive_dir.mkdir(exist_ok=True)
         
-        # Backup configuration
+        # Backup configuration - optimized retention
         self.config = {
-            'hourly_retention': 24,      # Keep last 24 hourly backups
-            'daily_retention': 30,       # Keep last 30 daily backups
-            'weekly_retention': 12,      # Keep last 12 weekly backups
-            'monthly_retention': 12,     # Keep last 12 monthly backups
-            'compress_after_days': 7     # Compress backups older than 7 days
+            'hourly_retention': 12,      # Keep last 12 hourly backups (reduced from 24)
+            'daily_retention': 14,       # Keep last 14 daily backups (reduced from 30)
+            'weekly_retention': 8,       # Keep last 8 weekly backups (reduced from 12)
+            'monthly_retention': 6,      # Keep last 6 monthly backups (reduced from 12)
+            'compress_after_days': 3     # Compress backups older than 3 days (reduced from 7)
         }
         
-        logger.info(f'BackupManager initialized - Database: {self.db_path}')
-        logger.info(f'Backup directory: {self.backup_dir}')
+        logger.info(f'BackupManager initialized')
+        logger.info(f'  SQLite: {self.db_path}')
+        logger.info(f'  HDF5: {self.hdf5_path}')
+        logger.info(f'  Backup directory: {self.backup_dir}')
     
     def create_backup(self, backup_type='manual'):
-        """Create a backup of the database"""
+        """Create backups of both SQLite and HDF5 databases"""
         try:
-            if not self.db_path.exists():
-                logger.warning(f'Database not found: {self.db_path}')
-                return None
-            
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            backups_created = []
+            total_size = 0
+            
+            # Backup SQLite if exists
+            if self.db_path.exists():
+                sqlite_backup = self._backup_sqlite(backup_type, timestamp)
+                if sqlite_backup:
+                    backups_created.append(('SQLite', sqlite_backup))
+                    total_size += sqlite_backup.stat().st_size / 1024
+            
+            # Backup HDF5 if exists
+            if self.hdf5_path.exists():
+                hdf5_backup = self._backup_hdf5(backup_type, timestamp)
+                if hdf5_backup:
+                    backups_created.append(('HDF5', hdf5_backup))
+                    total_size += hdf5_backup.stat().st_size / 1024
+            
+            if backups_created:
+                logger.info(f'Backups created: {len(backups_created)} files, {total_size:.2f} KB total')
+                
+                # Log operation
+                try:
+                    from operations_logger import log_backup
+                    log_backup(f"{backup_type.capitalize()} backup: {len(backups_created)} files ({total_size:.1f} KB)", "success", timestamp)
+                except:
+                    pass
+                
+                return backups_created
+            else:
+                logger.warning('No databases found to backup')
+                return None
+                
+        except Exception as e:
+            logger.error(f'Backup failed: {e}', exc_info=True)
+            return None
+    
+    def _backup_sqlite(self, backup_type, timestamp):
+        """Backup SQLite database"""
+        try:
             backup_filename = f'flight_history_{backup_type}_{timestamp}.db'
             backup_path = self.backup_dir / backup_filename
             
-            # Create backup using SQLite's backup API
-            logger.info(f'Creating {backup_type} backup: {backup_filename}')
+            logger.info(f'Creating SQLite {backup_type} backup: {backup_filename}')
             
             source_conn = sqlite3.connect(str(self.db_path))
             backup_conn = sqlite3.connect(str(backup_path))
@@ -71,42 +109,34 @@ class BackupManager:
             source_conn.close()
             backup_conn.close()
             
-            # Get backup size
-            backup_size = backup_path.stat().st_size / 1024  # KB
-            logger.info(f'Backup created successfully - Size: {backup_size:.2f} KB')
+            return backup_path
+        except Exception as e:
+            logger.error(f'SQLite backup failed: {e}')
+            return None
+    
+    def _backup_hdf5(self, backup_type, timestamp):
+        """Backup HDF5 database"""
+        try:
+            backup_filename = f'flight_history_{backup_type}_{timestamp}.h5'
+            backup_path = self.backup_dir / backup_filename
             
-            # Log operation
-            try:
-                from operations_logger import log_backup
-                log_backup(f"{backup_type.capitalize()} backup created ({backup_size:.1f} KB)", "success", str(backup_filename))
-            except:
-                pass
+            logger.info(f'Creating HDF5 {backup_type} backup: {backup_filename}')
             
-            # Create metadata file
-            metadata = {
-                'timestamp': timestamp,
-                'type': backup_type,
-                'size_kb': backup_size,
-                'database': str(self.db_path),
-                'created': datetime.now().isoformat()
-            }
-            
-            metadata_path = backup_path.with_suffix('.json')
-            with open(metadata_path, 'w') as f:
-                json.dump(metadata, f, indent=2)
+            # Simple copy for HDF5 (it's already optimized)
+            shutil.copy2(self.hdf5_path, backup_path)
             
             return backup_path
-            
         except Exception as e:
-            logger.error(f'Backup failed: {e}', exc_info=True)
+            logger.error(f'HDF5 backup failed: {e}')
             return None
     
     def compress_old_backups(self):
-        """Compress backups older than configured threshold"""
+        """Compress backups older than configured threshold (both SQLite and HDF5)"""
         try:
             cutoff_date = datetime.now() - timedelta(days=self.config['compress_after_days'])
             compressed_count = 0
             
+            # Compress SQLite backups
             for backup_file in self.backup_dir.glob('*.db'):
                 # Skip if already compressed
                 if backup_file.with_suffix('.db.gz').exists():
@@ -116,7 +146,28 @@ class BackupManager:
                 file_time = datetime.fromtimestamp(backup_file.stat().st_mtime)
                 
                 if file_time < cutoff_date:
-                    logger.info(f'Compressing old backup: {backup_file.name}')
+                    logger.info(f'Compressing old SQLite backup: {backup_file.name}')
+                    
+                    # Compress the file
+                    with open(backup_file, 'rb') as f_in:
+                        with gzip.open(f'{backup_file}.gz', 'wb') as f_out:
+                            shutil.copyfileobj(f_in, f_out)
+                    
+                    # Remove original
+                    backup_file.unlink()
+                    compressed_count += 1
+            
+            # Compress HDF5 backups
+            for backup_file in self.backup_dir.glob('*.h5'):
+                # Skip if already compressed
+                if backup_file.with_suffix('.h5.gz').exists():
+                    continue
+                
+                # Check file age
+                file_time = datetime.fromtimestamp(backup_file.stat().st_mtime)
+                
+                if file_time < cutoff_date:
+                    logger.info(f'Compressing old HDF5 backup: {backup_file.name}')
                     
                     # Compress the file
                     with open(backup_file, 'rb') as f_in:

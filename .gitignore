@@ -14,6 +14,15 @@ ENV/
 *.db
 flight_history.db
 flights.db
+*.h5
+flight_history.h5
+backups/*.h5
+dump.rdb
+
+# Redis binaries
+redis/*.exe
+redis/*.pdb
+redis/*.dll
 
 # Logs
 *.log

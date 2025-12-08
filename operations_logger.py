@@ -73,9 +73,9 @@ class DailyOperationsLog:
             
             logs.append(entry)
             
-            # Keep only last 1000 entries to prevent file from growing too large
-            if len(logs) > 1000:
-                logs = logs[-1000:]
+            # Keep only last 500 entries to prevent file from growing too large
+            if len(logs) > 500:
+                logs = logs[-500:]
             
             self._save_logs(logs)
             logger.info(f"Logged operation: {category} - {operation} [{status}]")

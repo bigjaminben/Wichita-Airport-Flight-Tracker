@@ -134,12 +134,12 @@ class AirportFlightTrackerWithGraphs:
         
         for code, info in airports.items():
             try:
-                # Enhanced API call with humidity and more data
+                # Enhanced API call with precipitation and more data
                 url = (
                     f"https://api.open-meteo.com/v1/forecast"
                     f"?latitude={info['lat']}&longitude={info['lon']}"
-                    f"&current=temperature_2m,relative_humidity_2m,weathercode,windspeed_10m,visibility"
-                    f"&temperature_unit=fahrenheit&windspeed_unit=mph&timezone=auto"
+                    f"&current=temperature_2m,relative_humidity_2m,weathercode,windspeed_10m,visibility,precipitation,precipitation_probability"
+                    f"&temperature_unit=fahrenheit&windspeed_unit=mph&precipitation_unit=inch&timezone=auto"
                 )
                 r = requests.get(url, timeout=10)
                 r.raise_for_status()
@@ -168,7 +168,10 @@ class AirportFlightTrackerWithGraphs:
                         'Condition': condition,
                         'Wind_Speed_mph': int(current.get('windspeed_10m', 0)),
                         'Visibility_miles': visibility_miles,
-                        'Humidity_percent': int(current.get('relative_humidity_2m', 50))
+                        'Humidity_percent': int(current.get('relative_humidity_2m', 50)),
+                        'Precipitation_inches': round(current.get('precipitation', 0.0), 2),
+                        'Precipitation_probability': int(current.get('precipitation_probability', 0)),
+                        'weathercode': weather_code
                     }
             except Exception as e:
                 logger.warning(f"Could not fetch weather for {code}: {e}")
