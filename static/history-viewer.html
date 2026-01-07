@@ -1,0 +1,942 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Historical flight data viewer with detailed statistics and analysis">
+  <meta name="author" content="Deloitte Consulting">
+  <title>Flight History Viewer | ICT Airport Operations Intelligence Platform</title>
+  <link rel="stylesheet" href="/static/styles_enterprise.css">
+  <link rel="preconnect" href="https://cdn.plot.ly">
+  <script src="https://cdn.plot.ly/plotly-latest.min.js" defer></script>
+  <style>
+    .page-content {
+      padding: var(--spacing-10) 0;
+    }
+
+    .history-container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 0 var(--spacing-8);
+    }
+
+    .page-header {
+      margin-bottom: var(--spacing-10);
+    }
+
+    .page-header h2 {
+      font-size: var(--font-size-3xl);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-neutral-900);
+      margin-bottom: var(--spacing-2);
+    }
+
+    .page-header p {
+      font-size: var(--font-size-base);
+      color: var(--color-neutral-500);
+    }
+
+    .date-selector {
+      background: var(--deloitte-white);
+      border: 1px solid var(--color-neutral-300);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-8);
+      margin-bottom: var(--spacing-8);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .date-controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: var(--spacing-6);
+      margin-bottom: var(--spacing-6);
+    }
+
+    .date-control-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-2);
+    }
+
+    .date-control-group label {
+      color: var(--color-neutral-600);
+      font-weight: var(--font-weight-semibold);
+      font-size: var(--font-size-sm);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .date-input, .view-selector {
+      background: var(--deloitte-white);
+      border: 1px solid var(--color-neutral-300);
+      color: var(--color-neutral-900);
+      padding: var(--spacing-3) var(--spacing-4);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
+      font-family: var(--font-family-primary);
+      transition: all var(--transition-base);
+    }
+
+    .date-input:focus, .view-selector:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(134, 188, 37, 0.1);
+      background: var(--deloitte-white);
+    }
+
+    .quick-select-buttons {
+      display: flex;
+      gap: var(--spacing-3);
+      flex-wrap: wrap;
+      margin-bottom: var(--spacing-6);
+    }
+
+    .quick-btn {
+      background: var(--color-neutral-100);
+      border: 1px solid var(--color-neutral-300);
+      color: var(--color-neutral-600);
+      padding: var(--spacing-2) var(--spacing-4);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      cursor: pointer;
+      transition: all var(--transition-base);
+    }
+
+    .quick-btn:hover {
+      background: var(--color-neutral-200);
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+
+    .quick-btn.active {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      color: white;
+    }
+
+    .load-button {
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+      color: white;
+      border: none;
+      padding: var(--spacing-3) var(--spacing-8);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all var(--transition-base);
+      align-self: flex-end;
+    }
+
+    .load-button:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .load-button:active {
+      transform: translateY(0);
+    }
+
+    .load-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: var(--spacing-6);
+      margin-bottom: var(--spacing-8);
+    }
+
+    .stat-card {
+      background: var(--deloitte-white);
+      border: 1px solid var(--color-neutral-300);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-6);
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition-base);
+      display: flex;
+      gap: var(--spacing-4);
+      align-items: flex-start;
+    }
+
+    .stat-card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: var(--color-primary);
+    }
+
+    .stat-card.on-time .stat-icon {
+      background: rgba(134, 188, 37, 0.1);
+      color: var(--color-success);
+    }
+
+    .stat-card.delayed .stat-icon {
+      background: rgba(255, 184, 0, 0.1);
+      color: var(--color-warning);
+    }
+
+    .stat-card.cancelled .stat-icon {
+      background: rgba(218, 41, 28, 0.1);
+      color: var(--color-danger);
+    }
+
+    .stat-card.total .stat-icon {
+      background: rgba(0, 118, 168, 0.1);
+      color: var(--color-info);
+    }
+
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .stat-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .stat-content {
+      flex: 1;
+    }
+
+    .stat-label {
+      font-size: var(--font-size-sm);
+      color: var(--color-neutral-500);
+      font-weight: var(--font-weight-medium);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: var(--spacing-2);
+    }
+
+    .stat-value {
+      font-size: var(--font-size-2xl);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-neutral-900);
+      margin-bottom: var(--spacing-1);
+    }
+
+    .stat-sublabel {
+      font-size: var(--font-size-xs);
+      color: var(--color-neutral-400);
+    }
+
+    .charts-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: var(--spacing-6);
+      margin-bottom: var(--spacing-8);
+    }
+
+    .chart-card {
+      background: var(--deloitte-white);
+      border: 1px solid var(--color-neutral-300);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-6);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .chart-title {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-neutral-900);
+      margin-bottom: var(--spacing-4);
+      padding-bottom: var(--spacing-4);
+      border-bottom: 1px solid var(--color-neutral-200);
+    }
+
+    .table-section {
+      background: var(--deloitte-white);
+      border: 1px solid var(--color-neutral-300);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-6);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: var(--spacing-8);
+    }
+
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-4);
+      padding-bottom: var(--spacing-4);
+      border-bottom: 1px solid var(--color-neutral-200);
+    }
+
+    .table-header h3 {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-neutral-900);
+    }
+
+    .table-controls {
+      display: flex;
+      gap: var(--spacing-3);
+    }
+
+    .export-btn {
+      background: var(--color-neutral-100);
+      border: 1px solid var(--color-neutral-300);
+      color: var(--color-neutral-600);
+      padding: var(--spacing-2) var(--spacing-4);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      cursor: pointer;
+      transition: all var(--transition-base);
+      display: flex;
+      gap: var(--spacing-2);
+      align-items: center;
+    }
+
+    .export-btn:hover {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      color: white;
+    }
+
+    .flights-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--font-size-sm);
+    }
+
+    .flights-table thead {
+      background: var(--color-neutral-100);
+      border-bottom: 2px solid var(--color-neutral-300);
+    }
+
+    .flights-table th {
+      padding: var(--spacing-4);
+      text-align: left;
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-neutral-600);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .flights-table th:hover {
+      background: var(--color-neutral-200);
+    }
+
+    .flights-table td {
+      padding: var(--spacing-4);
+      border-bottom: 1px solid var(--color-neutral-200);
+      color: var(--color-neutral-700);
+    }
+
+    .flights-table tbody tr:hover {
+      background: var(--color-neutral-50);
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: var(--spacing-1) var(--spacing-3);
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-semibold);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .status-on-time {
+      background: rgba(134, 188, 37, 0.1);
+      color: #5A7E1B;
+    }
+
+    .status-delayed {
+      background: rgba(255, 184, 0, 0.1);
+      color: #996600;
+    }
+
+    .status-cancelled {
+      background: rgba(218, 41, 28, 0.1);
+      color: #993333;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--color-neutral-300);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .no-data {
+      text-align: center;
+      padding: var(--spacing-10);
+      color: var(--color-neutral-500);
+    }
+
+    .no-data p {
+      margin: var(--spacing-4) 0;
+    }
+
+    @media (max-width: 768px) {
+      .date-controls {
+        grid-template-columns: 1fr;
+      }
+
+      .charts-section {
+        grid-template-columns: 1fr;
+      }
+
+      .quick-select-buttons {
+        flex-direction: column;
+      }
+
+      .quick-btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-particles">
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+    </div>
+    <div class="header-content">
+      <div class="header-left">
+        <div class="brand-lockup">
+          <img src="/static/logo.png" alt="Deloitte" class="header-logo" />
+        </div>
+        <div class="header-text">
+          <h1>ICT Airport Operations Intelligence Platform</h1>
+          <p class="subtitle">Flight History Viewer • Historical Data Analysis & Statistics</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="status-indicators">
+          <span class="live-indicator" title="Real-time data available" aria-label="Data status">
+            <span class="pulse-dot"></span> ACTIVE
+          </span>
+          <span class="last-update" title="Last data refresh">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+              <path d="M7 0a7 7 0 100 14A7 7 0 007 0zm0 12.6A5.6 5.6 0 117 1.4a5.6 5.6 0 010 11.2z"/>
+              <path d="M7.7 3.5H6.3v4.2l3.5 2.1.7-1.2-2.8-1.7V3.5z"/>
+            </svg>
+            <span id="last-updated">--:--:--</span>
+          </span>
+          <span class="current-time" title="Current local time">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+              <path d="M7 0C3.13 0 0 3.13 0 7s3.13 7 7 7 7-3.13 7-7-3.13-7-7-7zm0 12.6A5.6 5.6 0 117 1.4a5.6 5.6 0 010 11.2z"/>
+            </svg>
+            <span id="current-time">--:--:--</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="page-content">
+      <div class="history-container">
+        <div class="page-header">
+          <h2>Historical Flight Data Analysis</h2>
+          <p>Analyze flight patterns, delays, and operational statistics across selected time periods</p>
+        </div>
+
+        <div class="date-selector">
+          <div class="quick-select-buttons">
+            <button class="quick-btn" onclick="selectDateRange('today')">Today</button>
+            <button class="quick-btn" onclick="selectDateRange('week')">Last 7 Days</button>
+            <button class="quick-btn" onclick="selectDateRange('month')">Last 30 Days</button>
+            <button class="quick-btn" onclick="selectDateRange('custom')">Custom Range</button>
+          </div>
+      <div class="date-controls">
+        <div class="date-control-group">
+          <label for="view-type">View Type</label>
+          <select id="view-type" class="view-selector">
+            <option value="daily">Daily View</option>
+            <option value="weekly">Weekly View</option>
+            <option value="monthly">Monthly View</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </div>
+        
+        <div class="date-control-group" id="single-date-group">
+          <label for="selected-date">Date</label>
+          <input type="date" id="selected-date" class="date-input">
+        </div>
+        
+        <div class="date-control-group" id="date-range-group" style="display: none;">
+          <label for="start-date">Start Date</label>
+          <input type="date" id="start-date" class="date-input">
+        </div>
+        
+        <div class="date-control-group" id="end-date-group" style="display: none;">
+          <label for="end-date">End Date</label>
+          <input type="date" id="end-date" class="date-input">
+        </div>
+      </div>
+      
+      <button class="load-button" onclick="loadHistoricalData()">
+        📊 Load Statistics
+      </button>
+      
+      <div class="export-buttons">
+        <button class="export-btn" onclick="exportToCSV()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+            <path d="M11 0H3c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V2c0-1.1-.9-2-2-2zm-4 11H5v-2h2v2zm4-4H3V3h8v4z"/>
+          </svg>
+          Export CSV
+        </button>
+        <button class="export-btn" onclick="exportToJSON()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+            <path d="M11 0H3c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V2c0-1.1-.9-2-2-2zm-4 11H5v-2h2v2zm4-4H3V3h8v4z"/>
+          </svg>
+          Export JSON
+        </button>
+        <button class="export-btn" onclick="printReport()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+            <path d="M11 0H3c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V2c0-1.1-.9-2-2-2zm0 9H3V2h8v7z"/>
+          </svg>
+          Print Report
+        </button>
+        </div>
+        </div>
+      </div>
+
+      <!-- Statistics Grid -->
+      <div id="stats-section" style="display: none;">
+        <div class="stats-grid">
+          <article class="stat-card total">
+            <div class="stat-icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75-3.54-4.3 5.42h11l-3.95-4.88z"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Total Flights</div>
+              <div class="stat-value" id="stat-total">0</div>
+              <div class="stat-sublabel">All operations</div>
+            </div>
+          </article>
+          
+          <article class="stat-card on-time">
+            <div class="stat-icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M11.99 5C6.47 5 2 8.13 2 12s4.47 7 9.99 7C17.52 19 22 15.87 22 12s-4.48-7-10.01-7zM12 18c-3.35 0-6-2.57-6-6s2.65-6 6-6 6 2.57 6 6-2.65 6-6 6zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 6 15.5 6 14 6.67 14 7.5s.67 1.5 1.5 1.5z"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">On-Time Rate</div>
+              <div class="stat-value" id="stat-ontime">0%</div>
+              <div class="stat-sublabel">Performance</div>
+            </div>
+          </article>
+          
+          <article class="stat-card delayed">
+            <div class="stat-icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Delayed Flights</div>
+              <div class="stat-value" id="stat-delayed">0</div>
+              <div class="stat-sublabel">Behind schedule</div>
+            </div>
+          </article>
+          
+          <article class="stat-card cancelled">
+            <div class="stat-icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Cancellations</div>
+              <div class="stat-value" id="stat-cancelled">0</div>
+              <div class="stat-sublabel">Cancelled operations</div>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div id="charts-section" style="display: none;">
+        <div class="charts-section">
+          <div class="chart-card">
+            <div class="chart-title">Flight Trend</div>
+            <div id="chart-trend"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Status Distribution</div>
+            <div id="chart-status"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Top Airlines</div>
+            <div id="chart-airlines"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Top Routes</div>
+            <div id="chart-routes"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Flights Table -->
+      <div id="table-section" class="table-section" style="display: none;">
+        <div class="table-header">
+          <h3>Flight Details</h3>
+          <div class="table-controls">
+            <button class="export-btn" onclick="exportToCSV()">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+                <path d="M11 0H3c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V2c0-1.1-.9-2-2-2zm-4 11H5v-2h2v2zm4-4H3V3h8v4z"/>
+              </svg>
+              Export CSV
+            </button>
+          </div>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="flights-table" id="flights-table">
+            <thead>
+              <tr>
+                <th onclick="sortTable(0)">Flight #</th>
+                <th onclick="sortTable(1)">Airline</th>
+                <th onclick="sortTable(2)">Type</th>
+                <th onclick="sortTable(3)">Route</th>
+                <th onclick="sortTable(4)">Scheduled</th>
+                <th onclick="sortTable(5)">Status</th>
+              </tr>
+            </thead>
+            <tbody id="flights-tbody">
+              <tr><td colspan="6" class="no-data">No data loaded</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+<script src="/static/app.js"></script>
+<script>
+// Initialize date pickers
+(function initHistory() {
+  const today = new Date();
+  const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+  
+  document.getElementById('start-date').valueAsDate = sevenDaysAgo;
+  document.getElementById('end-date').valueAsDate = today;
+})();
+
+function selectDateRange(range) {
+  const today = new Date();
+  let startDate = new Date(today);
+  const endDate = new Date(today);
+  
+  switch(range) {
+    case 'today':
+      startDate = new Date(today);
+      break;
+    case 'week':
+      startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    case 'month':
+      startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+    case 'custom':
+      document.getElementById('start-date-group').style.display = 'flex';
+      document.getElementById('end-date-group').style.display = 'flex';
+      return;
+  }
+  
+  document.getElementById('start-date').valueAsDate = startDate;
+  document.getElementById('end-date').valueAsDate = endDate;
+  document.getElementById('start-date-group').style.display = 'flex';
+  document.getElementById('end-date-group').style.display = 'flex';
+}
+
+let currentData = null;
+let sortColumn = 0;
+let sortAsc = true;
+
+async function loadHistoricalData() {
+  const startDate = document.getElementById('start-date').value;
+  const endDate = document.getElementById('end-date').value;
+  
+  if (!startDate || !endDate) {
+    alert('Please select a date range');
+    return;
+  }
+  
+  try {
+    const response = await fetch(`/api/flights/history?start_date=${startDate}&end_date=${endDate}`);
+    const data = await response.json();
+    
+    currentData = data;
+    displayStatistics(data);
+    displayCharts(data);
+    displayFlightsTable(data);
+    
+    document.getElementById('stats-section').style.display = 'block';
+    document.getElementById('charts-section').style.display = 'block';
+    document.getElementById('table-section').style.display = 'block';
+    
+  } catch (error) {
+    console.error('Error loading historical data:', error);
+    alert('Failed to load historical data. Please try again.');
+  }
+}
+
+function displayStatistics(data) {
+  const arrivals = data.arrivals || [];
+  const departures = data.departures || [];
+  const stats = data.stats || {};
+  
+  document.getElementById('stat-total').textContent = stats.total_flights || 0;
+  document.getElementById('stat-ontime').textContent = (stats.on_time_percentage || 0) + '%';
+  document.getElementById('stat-delayed').textContent = stats.delayed_count || 0;
+  document.getElementById('stat-cancelled').textContent = stats.cancelled_count || 0;
+}
+
+function displayCharts(data) {
+  const arrivals = data.arrivals || [];
+  const departures = data.departures || [];
+  const allFlights = [...arrivals, ...departures];
+  
+  if (allFlights.length === 0) {
+    document.getElementById('chart-trend').innerHTML = '<p style="text-align: center; padding: 2rem;">No data available</p>';
+    return;
+  }
+  
+  // Trend Chart
+  const dates = {};
+  allFlights.forEach(f => {
+    const date = f.scheduled_time ? f.scheduled_time.split('T')[0] : new Date().toISOString().split('T')[0];
+    dates[date] = (dates[date] || 0) + 1;
+  });
+  
+  const sortedDates = Object.keys(dates).sort();
+  const trendData = [{
+    x: sortedDates,
+    y: sortedDates.map(d => dates[d]),
+    type: 'scatter',
+    mode: 'lines+markers',
+    marker: { color: '#86BC25', size: 8 },
+    line: { color: '#86BC25', width: 2 }
+  }];
+  
+  Plotly.newPlot('chart-trend', trendData, {
+    title: { text: 'Flight Volume Trend', font: { size: 14 } },
+    xaxis: { title: 'Date', color: '#53565A' },
+    yaxis: { title: 'Number of Flights', color: '#53565A' },
+    paper_bgcolor: 'white',
+    plot_bgcolor: 'white',
+    font: { color: '#53565A' },
+    margin: { b: 40, l: 40, r: 20, t: 40 }
+  }, { responsive: true, displayModeBar: false });
+  
+  // Status Distribution
+  const statusCounts = {
+    'On-Time': 0,
+    'Delayed': 0,
+    'Cancelled': 0,
+    'Other': 0
+  };
+  
+  allFlights.forEach(f => {
+    const status = (f.status || f.Status || '').toLowerCase();
+    if (status.includes('cancel')) statusCounts['Cancelled']++;
+    else if (status.includes('delay')) statusCounts['Delayed']++;
+    else if (status === '' || status === 'scheduled') statusCounts['Other']++;
+    else statusCounts['On-Time']++;
+  });
+  
+  const statusData = [{
+    labels: Object.keys(statusCounts),
+    values: Object.values(statusCounts),
+    type: 'pie',
+    marker: { colors: ['#86BC25', '#FFB800', '#DA291C', '#97999B'] }
+  }];
+  
+  Plotly.newPlot('chart-status', statusData, {
+    title: { text: 'Status Distribution', font: { size: 14 } },
+    paper_bgcolor: 'white',
+    font: { color: '#53565A' },
+    margin: { b: 20, l: 20, r: 20, t: 40 }
+  }, { responsive: true, displayModeBar: false });
+  
+  // Top Airlines
+  const airlineCounts = {};
+  allFlights.forEach(f => {
+    const airline = f.airline || f.Airline || 'Unknown';
+    airlineCounts[airline] = (airlineCounts[airline] || 0) + 1;
+  });
+  
+  const topAirlines = Object.entries(airlineCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+  
+  const airlineData = [{
+    x: topAirlines.map(a => a[1]),
+    y: topAirlines.map(a => a[0]),
+    type: 'bar',
+    orientation: 'h',
+    marker: { color: '#86BC25' }
+  }];
+  
+  Plotly.newPlot('chart-airlines', airlineData, {
+    title: { text: 'Top Airlines', font: { size: 14 } },
+    xaxis: { title: 'Flights', color: '#53565A' },
+    paper_bgcolor: 'white',
+    plot_bgcolor: 'white',
+    font: { color: '#53565A' },
+    margin: { b: 40, l: 100, r: 20, t: 40 }
+  }, { responsive: true, displayModeBar: false });
+  
+  // Top Routes  
+  const routeCounts = {};
+  allFlights.forEach(f => {
+    const type = (f.flight_type || f.type || '').toLowerCase();
+    const route = type === 'arrival' ? 
+      `${f.origin || f.Origin || '?'} → ICT` : 
+      `ICT → ${f.destination || f.Destination || '?'}`;
+    routeCounts[route] = (routeCounts[route] || 0) + 1;
+  });
+  
+  const topRoutes = Object.entries(routeCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+  
+  const routeData = [{
+    x: topRoutes.map(r => r[1]),
+    y: topRoutes.map(r => r[0]),
+    type: 'bar',
+    orientation: 'h',
+    marker: { color: '#0076A8' }
+  }];
+  
+  Plotly.newPlot('chart-routes', routeData, {
+    title: { text: 'Top Routes', font: { size: 14 } },
+    xaxis: { title: 'Flights', color: '#53565A' },
+    paper_bgcolor: 'white',
+    plot_bgcolor: 'white',
+    font: { color: '#53565A' },
+    margin: { b: 40, l: 100, r: 20, t: 40 }
+  }, { responsive: true, displayModeBar: false });
+}
+
+function displayFlightsTable(data) {
+  const arrivals = data.arrivals || [];
+  const departures = data.departures || [];
+  const allFlights = [...arrivals, ...departures];
+  
+  const tbody = document.getElementById('flights-tbody');
+  
+  if (allFlights.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="no-data">No flights found for this period</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = allFlights.slice(0, 100).map(flight => {
+    const statusClass = getStatusClass(flight.status || flight.Status);
+    const flightType = (flight.flight_type || flight.type || '').toLowerCase() === 'arrival' ? 'Arrival' : 'Departure';
+    const route = flightType === 'Arrival' ? 
+      `${flight.origin || flight.Origin || 'N/A'} → ICT` : 
+      `ICT → ${flight.destination || flight.Destination || 'N/A'}`;
+    const scheduled = flight.scheduled_time || flight.Scheduled_Time || 'N/A';
+    
+    return `
+      <tr>
+        <td>${flight.flight_number || flight.Flight_Number || 'N/A'}</td>
+        <td>${flight.airline || flight.Airline || 'Unknown'}</td>
+        <td>${flightType}</td>
+        <td>${route}</td>
+        <td>${scheduled}</td>
+        <td><span class="status-badge status-${statusClass}">${flight.status || flight.Status || 'Unknown'}</span></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function getStatusClass(status) {
+  if (!status) return 'scheduled';
+  const s = status.toLowerCase();
+  if (s.includes('cancel')) return 'cancelled';
+  if (s.includes('delay') || s.includes('late')) return 'delayed';
+  if (s.includes('land') || s.includes('on-time')) return 'on-time';
+  return 'scheduled';
+}
+
+function sortTable(col) {
+  if (sortColumn === col) {
+    sortAsc = !sortAsc;
+  } else {
+    sortColumn = col;
+    sortAsc = true;
+  }
+  
+  if (currentData) {
+    displayFlightsTable(currentData);
+  }
+}
+
+function exportToCSV() {
+  if (!currentData) return alert('No data to export');
+  
+  const arrivals = currentData.arrivals || [];
+  const departures = currentData.departures || [];
+  const allFlights = [...arrivals, ...departures];
+  
+  let csv = 'Flight Number,Airline,Type,Route,Scheduled Time,Status\n';
+  allFlights.forEach(f => {
+    const flightType = (f.flight_type || f.type || '').toLowerCase() === 'arrival' ? 'Arrival' : 'Departure';
+    const route = flightType === 'Arrival' ? 
+      `${f.origin || f.Origin || 'N/A'} → ICT` : 
+      `ICT → ${f.destination || f.Destination || 'N/A'}`;
+    const scheduled = f.scheduled_time || f.Scheduled_Time || 'N/A';
+    csv += `"${f.flight_number || f.Flight_Number || ''}","${f.airline || f.Airline || ''}","${flightType}","${route}","${scheduled}","${f.status || f.Status || ''}"\n`;
+  });
+  
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `flight-history-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportToJSON() {
+  if (!currentData) return alert('No data to export');
+  
+  const json = JSON.stringify(currentData, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `flight-history-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function printReport() {
+  window.print();
+}
+</script>
+</html>

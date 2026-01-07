@@ -74,8 +74,18 @@ def main():
     logging.getLogger('waitress').setLevel(logging.INFO)
 
     logger.info(f'Serving on http://{args.host}:{args.port}')
-    # Optimize Waitress settings for better performance
-    serve(app, host=args.host, port=args.port, threads=6, channel_timeout=120, cleanup_interval=10)
+    # Optimize Waitress settings for better performance and faster response
+    serve(
+        app, 
+        host=args.host, 
+        port=args.port, 
+        threads=8,              # Increased from 6 for better concurrency
+        channel_timeout=60,     # Reduced from 120 for faster timeout
+        cleanup_interval=30,    # Increased from 10 for less overhead
+        asyncore_use_poll=True, # Better performance on Windows
+        recv_bytes=16384,       # Larger buffer for better throughput
+        send_bytes=16384
+    )
 
 
 if __name__ == '__main__':

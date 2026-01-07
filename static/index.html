@@ -1,12 +1,39 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Wichita Airport Flight Tracker | Deloitte</title>
-  <link rel="stylesheet" href="/static/styles.css">
-  <!-- Plotly CDN for interactive charts - defer loading -->
-  <script src="https://cdn.plot.ly/plotly-latest.min.js" defer></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=5.0">
+  <meta name="description" content="Enterprise-grade real-time flight tracking and operational intelligence for Wichita Dwight D. Eisenhower National Airport">
+  <meta name="author" content="Deloitte Consulting">
+  <meta name="theme-color" content="#86BC25">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.plot.ly; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' http://127.0.0.1:5001;">
+  
+  <!-- Mobile Web App -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ICT Airport">
+  
+  <!-- SEO Meta Tags -->
+  <meta name="keywords" content="ICT Airport, Wichita Airport, Flight Tracking, Aviation, Real-time Data, Deloitte">
+  <meta name="robots" content="index, follow">
+  <meta property="og:title" content="ICT Airport Operations Intelligence Platform">
+  <meta property="og:description" content="Real-time flight tracking and operational intelligence">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="ICT Airport Intelligence">
+  
+  <title>ICT Airport Operations Intelligence Platform | Deloitte</title>
+  
+  <!-- Preload critical resources -->
+  <link rel="preload" href="/static/styles_enterprise.css" as="style">
+  <link rel="stylesheet" href="/static/styles_enterprise.css">
+  
+  <!-- DNS prefetch for external resources -->
+  <link rel="preconnect" href="https://cdn.plot.ly" crossorigin>
+  <link rel="dns-prefetch" href="https://cdn.plot.ly">
+  
+  <!-- Plotly.js - locked version for stability -->
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" defer></script>
 </head>
 <body>
   <header>
@@ -21,138 +48,279 @@
       <span class="particle"></span>
     </div>
     <div class="header-content">
-      <div>
-        <h1>Wichita Dwight D. Eisenhower National Airport</h1>
-        <p class="subtitle">ICT • Live Flight Tracking & Operations Dashboard</p>
+      <div class="header-left">
+        <div class="brand-lockup">
+          <img src="/static/logo.png" alt="Deloitte" class="header-logo" />
+        </div>
+        <div class="header-text">
+          <h1>ICT Airport Operations Intelligence Platform</h1>
+          <p class="subtitle">Wichita Dwight D. Eisenhower National Airport • Real-Time Flight Operations & Analytics</p>
+        </div>
       </div>
       <div class="header-right">
-        <span class="live-indicator">● LIVE</span>
-        <span class="last-update">Updated: <span id="last-updated">--:--</span></span>
-        <span class="current-time">Current Time: <span id="current-time">--:--</span></span>
+        <div class="status-indicators">
+          <span class="live-indicator" title="Real-time data feed active" aria-label="Live status">
+            <span class="pulse-dot"></span> LIVE
+          </span>
+          <span class="last-update" title="Last data refresh">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+              <path d="M7 0a7 7 0 100 14A7 7 0 007 0zm0 12.6A5.6 5.6 0 117 1.4a5.6 5.6 0 010 11.2z"/>
+              <path d="M7.7 3.5H6.3v4.2l3.5 2.1.7-1.2-2.8-1.7V3.5z"/>
+            </svg>
+            <span id="last-updated">--:--:--</span>
+          </span>
+          <span class="current-time" title="Current local time">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+              <path d="M7 0C3.13 0 0 3.13 0 7s3.13 7 7 7 7-3.13 7-7-3.13-7-7-7zm0 12.6A5.6 5.6 0 117 1.4a5.6 5.6 0 010 11.2z"/>
+            </svg>
+            <span id="current-time">--:--:--</span>
+          </span>
+          <span class="system-health" title="System health status">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+              <circle cx="7" cy="7" r="6" opacity="0.25"/>
+              <circle id="system-health-dot" cx="7" cy="7" r="4"/>
+            </svg>
+            <span id="system-health-label">System: Checking...</span>
+          </span>
+        </div>
       </div>
     </div>
   </header>
 
   <div class="container">
     <aside class="sidebar">
-      <div class="sidebar-section">
-        <h3>Current Live Flights</h3>
+      <section class="sidebar-section">
+        <h3>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M8 0L0 6l8 4 8-4-8-4zM2.5 7.5L8 10l5.5-2.5L8 5 2.5 7.5zM0 10l8 4 8-4v2l-8 4-8-4v-2z"/>
+          </svg>
+          Flight Operations Summary
+        </h3>
         <div class="stat-cards">
-          <div class="stat-card">
-            <div class="stat-label">Active Now</div>
-            <div class="stat-value" id="total-flights">0</div>
-            <div class="stat-sublabel">Scheduled + In-Air</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Arrivals</div>
-            <div class="stat-value" id="total-arrivals">0</div>
-            <div class="stat-sublabel">Arriving Today</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Departures</div>
-            <div class="stat-value" id="total-departures">0</div>
-            <div class="stat-sublabel">Departing Today</div>
-          </div>
+          <article class="stat-card stat-card-primary">
+            <div class="stat-icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Total Active Flights</div>
+              <div class="stat-value" id="total-flights">0</div>
+              <div class="stat-sublabel">Scheduled + In Transit</div>
+            </div>
+          </article>
+          <article class="stat-card stat-card-arrivals">
+            <div class="stat-icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M2.5 19h19v2h-19v-2zm7.18-5.73l4.35 1.16 5.31 1.42c.8.21 1.62-.26 1.84-1.06.21-.8-.26-1.62-1.06-1.84l-5.31-1.42-2.76-9.02L10.12 2v8.28L5.15 8.95l-.93-2.32-1.45-.39v5.17l1.45.39 5.31 1.42z"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Inbound Traffic</div>
+              <div class="stat-value" id="total-arrivals">0</div>
+              <div class="stat-sublabel">Arriving Today</div>
+            </div>
+          </article>
+          <article class="stat-card stat-card-departures">
+            <div class="stat-icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M2.5 19h19v2h-19v-2zm19.57-9.36c-.21-.8-1.04-1.28-1.84-1.06L14.92 10l-6.9-6.43-1.93.51 4.14 7.17-4.97 1.33-1.97-1.54-1.45.39 1.82 3.16.77 1.33 1.6-.43 5.31-1.42 4.35-1.16L21 11.49c.81-.23 1.28-1.05 1.07-1.85z"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Outbound Traffic</div>
+              <div class="stat-value" id="total-departures">0</div>
+              <div class="stat-sublabel">Departing Today</div>
+            </div>
+          </article>
         </div>
-      </div>
+      </section>
 
-      <div class="sidebar-section">
-        <h3>Airport Information</h3>
-        <div class="airport-details">
+      <section class="sidebar-section">
+        <h3>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M8 0C3.6 0 0 3.6 0 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zm0 14c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6z"/>
+            <circle cx="8" cy="8" r="2"/>
+          </svg>
+          Airport Information
+        </h3>
+        <dl class="airport-details">
           <div class="detail-item">
-            <span class="label">Code</span>
-            <span class="value">ICT</span>
+            <dt class="label">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                <path d="M6 0C2.7 0 0 2.7 0 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6zm0 10c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4z"/>
+              </svg>
+              ICAO Code
+            </dt>
+            <dd class="value">ICT</dd>
           </div>
           <div class="detail-item">
-            <span class="label">Location</span>
-            <span class="value">Wichita, KS</span>
+            <dt class="label">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                <path d="M6 0C3.8 0 2 1.8 2 4c0 3 4 8 4 8s4-5 4-8c0-2.2-1.8-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+              </svg>
+              Location
+            </dt>
+            <dd class="value">Wichita, Kansas</dd>
           </div>
           <div class="detail-item">
-            <span class="label">Elevation</span>
-            <span class="value">1,333 ft</span>
+            <dt class="label">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                <path d="M1 8h10l-5 4z"/><path d="M0 7h12v1H0z"/>
+              </svg>
+              Elevation
+            </dt>
+            <dd class="value">1,333 ft MSL</dd>
           </div>
           <div class="detail-item">
-            <span class="label">Runways</span>
-            <span class="value">3</span>
+            <dt class="label">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                <rect width="12" height="2" y="5"/><rect width="2" height="12" x="5"/>
+              </svg>
+              Runways
+            </dt>
+            <dd class="value">3 Active</dd>
           </div>
           <div class="detail-item">
-            <span class="label">Gates</span>
-            <span class="value">16</span>
+            <dt class="label">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                <rect width="10" height="8" x="1" y="2" rx="1"/><path d="M3 0h6v2H3z"/>
+              </svg>
+              Terminal Gates
+            </dt>
+            <dd class="value">16 Gates</dd>
           </div>
+          <div class="detail-item">
+            <dt class="label">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                <circle cx="6" cy="6" r="5"/><path d="M6 2v4l3 2" stroke="white" stroke-width="1" fill="none"/>
+              </svg>
+              Timezone
+            </dt>
+            <dd class="value">CST (UTC-6)</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="sidebar-section">
+        <button id="refresh-now" class="refresh-button" aria-label="Refresh all flight data">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M13.65 2.35C12.2.9 10.21 0 8 0 3.58 0 0 3.58 0 8s3.58 8 8 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L9 7h7V0l-2.35 2.35z"/>
+          </svg>
+          Refresh Data Now
+        </button>
+      </section>
+
+      <nav class="sidebar-section sidebar-navigation">
+        <h3>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M0 0h7v7H0zM9 0h7v7H9zM0 9h7v7H0zM9 9h7v7H9z"/>
+          </svg>
+          System Modules
+        </h3>
+        <a href="/static/operations.html" class="nav-link">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+            <path d="M0 0h4v4H0zM0 5h4v4H0zM0 10h4v4H0zM5 0h9v1H5zM5 2h7v1H5zM5 5h9v1H5zM5 7h7v1H5zM5 10h9v1H5zM5 12h7v1H5z"/>
+          </svg>
+          Operations Activity Log
+        </a>
+        <a href="/static/cache-stats.html" class="nav-link">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+            <path d="M12 0H2C.9 0 0 .9 0 2v10c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V2c0-1.1-.9-2-2-2zM5 11H3V6h2v5zm3 0H6V3h2v8zm3 0H9V8h2v3z"/>
+          </svg>
+          Cache Performance Metrics
+        </a>
+        <a href="/static/ml-info.html" class="nav-link">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+            <path d="M7 0C3.1 0 0 3.1 0 7s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7zm0 12c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5z"/>
+            <circle cx="7" cy="7" r="2"/><circle cx="3" cy="7" r="1"/><circle cx="11" cy="7" r="1"/>
+          </svg>
+          Machine Learning Analytics
+        </a>
+        <a href="/static/history-viewer.html" class="nav-link">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+            <path d="M7 0C3.1 0 0 3.1 0 7s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7zm0 12c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5z"/>
+            <path d="M7 3v4l3 2" stroke="white" stroke-width="1" fill="none"/>
+          </svg>
+          Flight History Viewer
+        </a>
+      </nav>
+
+      <section class="sidebar-section">
+        <h3>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <circle cx="8" cy="8" r="7" opacity="0.2"/>
+            <circle cx="8" cy="8" r="4"/>
+          </svg>
+          System Health
+        </h3>
+        <div id="health-panel" class="health-panel" role="status" aria-live="polite">
+          <div class="health-item"><strong>Overall:</strong> <span id="health-overall">Checking...</span> <span id="health-latency"></span></div>
+          <div class="health-item"><strong>API:</strong> <span id="health-api">--</span></div>
+          <div class="health-item"><strong>Redis:</strong> <span id="health-redis">--</span> <span id="health-redis-mem" class="muted"></span> <span id="health-redis-hit" class="muted"></span></div>
+          <div class="health-item"><strong>Node-RED:</strong> <span id="health-nodered">--</span></div>
+          <div class="health-item"><strong>HDF5:</strong> <span id="health-hdf5">--</span> <span id="health-hdf5-range" class="muted"></span> <span id="health-hdf5-size" class="muted"></span></div>
+          <div class="health-item"><strong>Flights Cache:</strong> <span id="health-cache">--</span></div>
         </div>
-      </div>
-
-      <div class="sidebar-section">
-        <button id="refresh-now" class="refresh-button">Refresh Data</button>
-      </div>
-
-      <div class="sidebar-section">
-        <a href="/static/operations.html" class="operations-button">
-          Activity and System Log
-        </a>
-      </div>
-
-      <div class="sidebar-section">
-        <a href="/static/cache-stats.html" class="operations-button">
-          Cache Statistics
-        </a>
-      </div>
-
-      <div class="sidebar-section">
-        <a href="/static/ml-info.html" class="operations-button">
-          Machine Learning Info
-        </a>
-      </div>
+      </section>
     </aside>
 
     <main class="main">
-      <section class="charts">
-        <div id="chart-status" class="chart-card"><div class="loading-spinner">Loading chart...</div></div>
-        <div id="chart-hourly" class="chart-card"><div class="loading-spinner">Loading chart...</div></div>
-        <div id="chart-airline" class="chart-card"><div class="loading-spinner">Loading chart...</div></div>
-        <div id="chart-map" class="chart-card"><div class="loading-spinner">Loading chart...</div></div>
+      <section class="charts" aria-label="Flight analytics charts">
+        <div id="chart-status" class="chart-card" role="img" aria-label="Flight status distribution chart">
+          <div class="loading-spinner">Loading chart...</div>
+        </div>
+        <div id="chart-hourly" class="chart-card" role="img" aria-label="Hourly flight activity chart">
+          <div class="loading-spinner">Loading chart...</div>
+        </div>
+        <div id="chart-airline" class="chart-card" role="img" aria-label="Airline performance chart">
+          <div class="loading-spinner">Loading chart...</div>
+        </div>
+        <div id="chart-map" class="chart-card" role="img" aria-label="Live flight tracking map">
+          <div class="loading-spinner">Loading chart...</div>
+        </div>
       </section>
 
-      <section class="history-summary-container">
+      <section class="history-summary-container" aria-label="Flight history summary">
         <div id="history-summary" class="history-summary-panel">
           <div class="loading-spinner">Loading today's summary...</div>
         </div>
       </section>
 
-      <section class="data-section">
+      <section class="data-section" aria-label="Live flight data">
         <div class="panels">
-          <div class="panel flights-panel">
+          <article class="panel flights-panel">
             <div class="panel-header">
-              <h4>Live Flights <span id="flight-count" class="badge">0</span></h4>
+              <h2>Live Flights <span id="flight-count" class="badge">0</span></h2>
             </div>
-            <div class="tabs">
-              <button class="tab-btn active" data-tab="arrivals">Arrivals</button>
-              <button class="tab-btn" data-tab="departures">Departures</button>
+            <div class="tabs" role="tablist" aria-label="Flight type selection">
+              <button class="tab-btn active" data-tab="arrivals" role="tab" aria-selected="true" aria-controls="arrivals">Arrivals</button>
+              <button class="tab-btn" data-tab="departures" role="tab" aria-selected="false" aria-controls="departures">Departures</button>
             </div>
-            <div id="arrivals" class="tab-content active">
-              <div class="flight-list" id="arrivals-list">
+            <div id="arrivals" class="tab-content active" role="tabpanel" aria-labelledby="arrivals-tab">
+              <div class="flight-list" id="arrivals-list" aria-live="polite">
                 <div class="loading-spinner">Loading arrivals...</div>
               </div>
             </div>
-            <div id="departures" class="tab-content">
-              <div class="flight-list" id="departures-list">
+            <div id="departures" class="tab-content" role="tabpanel" aria-labelledby="departures-tab" hidden>
+              <div class="flight-list" id="departures-list" aria-live="polite">
                 <div class="loading-spinner">Loading departures...</div>
               </div>
             </div>
-          </div>
+          </article>
           
-          <div class="panel weather-panel">
+          <article class="panel weather-panel">
             <div class="panel-header">
-              <h4>Current Weather Conditions</h4>
+              <h2>Current Weather Conditions</h2>
             </div>
-            <div class="weather-display" id="weather-cards">
+            <div class="weather-display" id="weather-cards" aria-live="polite">
               <div class="loading-spinner">Loading weather...</div>
             </div>
-          </div>
+          </article>
         </div>
       </section>
 
-      <section class="route-analysis-container">
+      <section class="route-analysis-container" aria-label="Route analysis">
         <div id="route-analysis" class="route-analysis-panel">
           <div class="loading-spinner">Loading route analysis...</div>
         </div>
@@ -163,12 +331,31 @@
   <footer>
     <div class="footer-content">
       <div class="footer-brand">
-        <img src="/static/logo.png" alt="Deloitte">
+        <img src="/static/logo.png" alt="Deloitte" class="footer-logo" />
+        <div class="footer-tagline">Making an impact that matters</div>
       </div>
       <div class="footer-info">
-        <p>Wichita Airport Flight Tracker</p>
-        <p>Data refreshes every 15 seconds | Real-time flight tracking and weather monitoring</p>
-        <p>&copy; 2025 Deloitte. All rights reserved.</p>
+        <div class="footer-column">
+          <h4>Platform Information</h4>
+          <p>ICT Airport Operations Intelligence Platform</p>
+          <p>Enterprise-grade real-time flight tracking and analytics</p>
+        </div>
+        <div class="footer-column">
+          <h4>Technical Specifications</h4>
+          <p>Data refresh interval: 15 seconds</p>
+          <p>Real-time weather integration</p>
+          <p>Machine learning-powered delay prediction</p>
+        </div>
+        <div class="footer-column">
+          <h4>Data Sources</h4>
+          <p>Live flight data via Airportia</p>
+          <p>Weather data via Aviation Weather Center</p>
+          <p>Historical analytics powered by HDF5</p>
+        </div>
+      </div>
+      <div class="footer-legal">
+        <p>&copy; 2025 Deloitte Consulting LLP. All rights reserved. | <a href="#">Privacy</a> | <a href="#">Terms of Service</a> | <a href="#">Accessibility</a></p>
+        <p class="footer-disclaimer">This system is for authorized use only. Unauthorized access is prohibited.</p>
       </div>
     </div>
   </footer>

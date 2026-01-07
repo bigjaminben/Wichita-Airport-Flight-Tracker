@@ -17,3 +17,20 @@ h5py>=3.12
 tables>=3.10
 python-dateutil>=2.8.2
 pytz>=2024.1
+
+# Enterprise-grade additions
+gunicorn>=22.0.0
+flask-limiter>=3.5.0
+flask-cors>=4.0.0
+python-json-logger>=2.0.7
+prometheus-client>=0.20.0
+pydantic>=2.5.0
+circuitbreaker>=1.4.0
+tenacity>=8.2.3
+opentelemetry-api>=1.21.0
+opentelemetry-sdk>=1.21.0
+opentelemetry-instrumentation-flask>=0.42b0
+structlog>=24.1.0
+marshmallow>=3.20.0
+apispec>=6.3.0
+apispec-webframeworks>=1.0.0

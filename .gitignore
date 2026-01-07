@@ -33,3 +33,21 @@ Thumbs.db
 # Secrets
 .env
 config.ini
+
+# Data files
+*.h5
+*.h5.gz
+*.gz
+
+# App data and runtime artifacts
+backups/
+logs/
+redis/
+dump.rdb
+
+# Large binaries
+*.exe
+*.pdb
+
+# Temp Office files
+~$*.docx
